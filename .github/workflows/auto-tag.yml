@@ -1,0 +1,51 @@
+name: Auto-tag release
+
+# Ties every release to an explicit, reviewed version bump instead of cutting one
+# on every merge: whenever pyproject.toml's `version` changes on main, tag that
+# commit `vX.Y.Z` and push the tag. Pushing the tag is what actually triggers
+# release.yml (builds the Linux/Windows/Docker artifacts and publishes the
+# GitHub Release) — this workflow's only job is deciding *when* that should
+# happen, from the single source of truth for the version.
+on:
+  push:
+    branches: [main]
+    paths:
+      - pyproject.toml
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from pyproject.toml
+        id: v
+        run: |
+          set -euo pipefail
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "pyproject.toml version '$version' isn't a plain X.Y.Z release version; skipping." >&2
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Tag and push if this version hasn't been released yet
+        if: steps.v.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          TAG="v${{ steps.v.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists; this version was already released. Skipping."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"

@@ -172,6 +172,16 @@ SETTINGS: list[SettingDef] = [
         choices=("24h", "12h"),
         description="How the dashboard renders clock times.",
     ),
+    SettingDef(
+        key="display.language",
+        category="Display",
+        label="Default language",
+        type="enum",
+        default="en",
+        choices=("en", "es", "fr", "de", "pt", "zh"),
+        description="The dashboard's language for users who haven't picked their own from the "
+        "language selector (top right of the header, and on the login screen).",
+    ),
 ]
 
 SETTINGS_BY_KEY: dict[str, SettingDef] = {s.key: s for s in SETTINGS}
