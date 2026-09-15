@@ -1,0 +1,159 @@
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --text: #1a2233;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #2563eb;
+  --good: #16a34a;
+  --bad: #dc2626;
+  --uncertain: #d97706;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1420;
+    --panel: #161d2b;
+    --text: #e6ebf5;
+    --muted: #8896ab;
+    --border: #263041;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1420;
+  --panel: #161d2b;
+  --text: #e6ebf5;
+  --muted: #8896ab;
+  --border: #263041;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+
+.screen { min-height: 100vh; }
+
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 340px;
+}
+.login-card h1 { margin: 0 0 2px; font-size: 22px; }
+.login-card .sub { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+.login-card input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+.login-card button, #logout-btn, #trend-refresh {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+#logout-btn, #trend-refresh { width: auto; padding: 6px 14px; }
+.error { color: var(--bad); font-size: 12px; margin-top: 10px; }
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.brand { font-weight: 700; font-size: 16px; }
+.brand-sub { font-weight: 400; color: var(--muted); }
+nav { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+.nav-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.nav-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.dot.on { background: var(--good); }
+
+main { padding: 20px; max-width: 1200px; margin: 0 auto; }
+.view { display: none; }
+.view.active { display: block; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+tr:last-child td { border-bottom: none; }
+
+.quality-good { color: var(--good); font-weight: 600; }
+.quality-bad { color: var(--bad); font-weight: 600; }
+.quality-uncertain { color: var(--uncertain); font-weight: 600; }
+
+.state-active { color: var(--bad); font-weight: 600; }
+.state-cleared { color: var(--good); }
+.state-acked { color: var(--uncertain); }
+
+.trend-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+#trend-chart {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  max-width: 100%;
+}
+.trend-wrap { overflow-x: auto; }
+.small-link {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}

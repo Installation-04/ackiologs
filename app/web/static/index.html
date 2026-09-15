@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en" data-theme="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ackiologs Historian</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="login-screen" class="screen">
+    <div class="login-card">
+      <h1>Ackiologs</h1>
+      <p class="sub">Industrial Data Historian</p>
+      <input id="login-user" placeholder="username" autocomplete="username" />
+      <input id="login-pass" placeholder="password" type="password" autocomplete="current-password" />
+      <button id="login-btn">Sign in</button>
+      <p id="login-error" class="error" hidden></p>
+    </div>
+  </div>
+
+  <div id="app-screen" class="screen" hidden>
+    <header>
+      <div class="brand">Ackiologs <span class="brand-sub">Historian</span></div>
+      <nav>
+        <button class="nav-btn active" data-view="live">Live</button>
+        <button class="nav-btn" data-view="trend">Trend</button>
+        <button class="nav-btn" data-view="alarms">Alarms</button>
+        <button class="nav-btn" data-view="connections">Connections</button>
+      </nav>
+      <div class="header-right">
+        <span id="conn-dot" class="dot" title="live feed"></span>
+        <button id="logout-btn">Sign out</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="view-live" class="view active">
+        <table id="live-table">
+          <thead>
+            <tr><th>Tag</th><th>Value</th><th>Units</th><th>Quality</th><th>Updated</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section id="view-trend" class="view">
+        <div class="trend-controls">
+          <select id="trend-tag"></select>
+          <select id="trend-range">
+            <option value="900">Last 15 min</option>
+            <option value="3600" selected>Last 1 hour</option>
+            <option value="21600">Last 6 hours</option>
+            <option value="86400">Last 24 hours</option>
+            <option value="604800">Last 7 days</option>
+          </select>
+          <button id="trend-refresh">Refresh</button>
+        </div>
+        <canvas id="trend-chart" height="90"></canvas>
+      </section>
+
+      <section id="view-alarms" class="view">
+        <table id="alarms-table">
+          <thead><tr><th>Time</th><th>State</th><th>Tag</th><th>Value</th><th>Message</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section id="view-connections" class="view">
+        <table id="connections-table">
+          <thead><tr><th>Connection</th><th>Protocol</th><th>Status</th><th>Tags</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

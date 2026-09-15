@@ -1,0 +1,47 @@
+# Every connection Ackiologs polls or subscribes to. One entry per PLC/server/broker.
+# `protocol` selects the driver in app/connectors/registry.py.
+#
+# This ships with only the built-in Simulator enabled so `docker compose up` produces
+# live trending data with zero field equipment. Uncomment/add real connections as needed
+# and re-run POST /api/config/reload (or restart the container) to pick them up.
+
+connections:
+  - name: sim1
+    protocol: simulator
+    poll_interval_ms: 1000
+
+  # --- OPC UA example -------------------------------------------------------
+  # - name: line1_opcua
+  #   protocol: opcua
+  #   endpoint: "opc.tcp://192.168.1.50:4840"
+  #   publish_interval_ms: 500
+  #   # username: opcuser
+  #   # password: ${OPCUA_PASSWORD}
+  #   # security_string: "Basic256Sha256,SignAndEncrypt,certs/client_cert.der,certs/client_key.pem"
+
+  # --- Modbus TCP example ----------------------------------------------------
+  # - name: vfd1_modbus
+  #   protocol: modbus
+  #   mode: tcp
+  #   host: 192.168.1.60
+  #   port: 502
+  #   unit_id: 1
+  #   poll_interval_ms: 1000
+
+  # --- Modbus RTU (serial) example -------------------------------------------
+  # - name: meter1_modbus_rtu
+  #   protocol: modbus
+  #   mode: rtu
+  #   serial_port: /dev/ttyUSB0
+  #   baudrate: 9600
+  #   unit_id: 3
+  #   poll_interval_ms: 2000
+
+  # --- MQTT / IIoT edge gateway example ---------------------------------------
+  # - name: edge_mqtt
+  #   protocol: mqtt
+  #   host: broker.local
+  #   port: 1883
+  #   username: telemetry
+  #   password: ${MQTT_PASSWORD}
+  #   qos: 1
