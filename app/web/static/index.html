@@ -4,8 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ackiologs Historian</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <!-- Vendored, not loaded from a CDN: this dashboard needs to work on air-gapped /
+       restricted OT networks with no internet egress, which is a common deployment
+       environment for an industrial historian. See app/web/static/vendor/. -->
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/chartjs-adapter-date-fns.bundle.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>

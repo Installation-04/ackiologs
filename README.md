@@ -18,9 +18,10 @@ it over a REST/WebSocket API and a built-in dashboard.
   signals don't flood storage.
 - **Alarming** — high/high-high/low/low-low/digital/bad-quality conditions defined
   per tag in config, with a full alarm & event journal (activate/clear history).
-- **Live dashboard** — real-time value table over WebSocket, historical trend
-  charts (raw or time-bucketed), alarm log, and connection health — no build step,
-  served directly by the API.
+- **Live dashboard** — real-time value table over an authenticated WebSocket,
+  historical trend charts (raw or time-bucketed), alarm log, and connection
+  health — no build step, all JS assets vendored (nothing fetched from a CDN),
+  so it works on an air-gapped OT network.
 - **REST + WebSocket API** — tags, history (raw & aggregated), live streaming,
   connection health, alarm events, and tag writes (setpoints) — see `/docs` for
   interactive OpenAPI docs once running.
