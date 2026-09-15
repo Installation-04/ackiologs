@@ -1,0 +1,36 @@
+[project]
+name = "ackiologs"
+version = "0.1.0"
+description = "Ackiologs — a protocol-agnostic industrial data historian: collect, store, and trend plant data from OPC UA, Modbus, MQTT and more, with SQLite or TimescaleDB storage."
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "python-dotenv>=1.0",
+    "PyYAML>=6.0",
+    "asyncua>=1.1.5",
+    "pymodbus>=3.6",
+    "paho-mqtt>=2.1",
+    "bcrypt>=4.1",
+    "python-jose[cryptography]>=3.3",
+    "orjson>=3.10",
+    "asyncpg>=0.29",
+    "aiosqlite>=0.20",
+    "python-multipart>=0.0.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "httpx>=0.27"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
