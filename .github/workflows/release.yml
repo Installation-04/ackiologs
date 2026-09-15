@@ -77,14 +77,6 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller pywin32
-      - name: Finish pywin32 install
-        # pywin32's wheel doesn't register pywintypes/pythoncom on PATH by itself —
-        # normally done by its post-install script, which needs to run once so
-        # PyInstaller's pywin32 hooks can find those DLLs when freezing the service exe.
-        shell: pwsh
-        run: |
-          $sitePackages = python -c "import site; print(site.getsitepackages()[0])"
-          python "$sitePackages\pywin32_postinstall.py" -install
       - run: python scripts/stamp_version.py "${{ needs.version.outputs.version }}"
       - name: Build onedir bundle
         run: pyinstaller --noconfirm --clean packaging/pyinstaller/ackiologs.spec
