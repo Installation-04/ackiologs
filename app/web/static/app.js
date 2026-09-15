@@ -22,9 +22,11 @@
     loadAlarms();
     loadConnections();
     loadOpcuaServerStatus();
+    loadModbusServerStatus();
     setInterval(loadAlarms, 15000);
     setInterval(loadConnections, 15000);
     setInterval(loadOpcuaServerStatus, 15000);
+    setInterval(loadModbusServerStatus, 15000);
   }
 
   function logout() {
@@ -62,7 +64,7 @@
       $(`#view-${btn.dataset.view}`).classList.add("active");
       if (btn.dataset.view === "trend") loadTrend();
       if (btn.dataset.view === "settings") loadSettings();
-      if (btn.dataset.view === "connections") loadOpcuaServerStatus();
+      if (btn.dataset.view === "connections") { loadOpcuaServerStatus(); loadModbusServerStatus(); }
     });
   });
 
@@ -340,6 +342,30 @@
       el.innerHTML = s.running
         ? `<span class="quality-good">● running</span> at <code>${s.endpoint}</code> — ${s.tag_count} tag(s) exposed, ${s.require_auth ? "login required" : "anonymous access allowed"}`
         : `<span class="quality-bad">● stopped</span> — enable it on the Settings page to let other SCADA/historian systems connect to Ackiologs as an OPC UA data source.`;
+    } catch (e) {
+      el.textContent = "Could not load status.";
+    }
+  }
+
+  async function loadModbusServerStatus() {
+    const el = $("#modbus-server-status");
+    const mappingEl = $("#modbus-server-mapping");
+    try {
+      const s = await api("/api/settings/modbus-server/status");
+      el.innerHTML = s.running
+        ? `<span class="quality-good">● running</span> at <code>${s.endpoint}</code> — ${s.tag_count} tag(s) exposed (float/int/bool tags only; read-only by protocol design)`
+        : `<span class="quality-bad">● stopped</span> — enable it on the Settings page to let Modbus-only PLCs/SCADA/HMIs read Ackiologs' live tag values.`;
+      if (s.running && s.mapping && Object.keys(s.mapping).length) {
+        let html = `<table id="modbus-mapping-table"><thead><tr><th>Tag</th><th>Table</th><th>Address</th></tr></thead><tbody>`;
+        for (const [tag, entry] of Object.entries(s.mapping)) {
+          const tableLabel = entry.table === "discrete_input" ? "Discrete Input (FC02)" : "Input Register (FC04)";
+          html += `<tr><td>${tag}</td><td>${tableLabel}</td><td>${entry.address}${entry.table === "input_register" ? "-" + (entry.address + 1) : ""}</td></tr>`;
+        }
+        html += `</tbody></table>`;
+        mappingEl.innerHTML = html;
+      } else {
+        mappingEl.innerHTML = "";
+      }
     } catch (e) {
       el.textContent = "Could not load status.";
     }

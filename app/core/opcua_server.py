@@ -16,6 +16,7 @@ import logging
 from typing import Any
 
 from app.core.runtime_settings import runtime_settings
+from app.core.tag_types import load_tag_data_types
 from app.db.models import DataType
 from app.ingest.live import LiveValue, live_bus
 
@@ -58,17 +59,6 @@ def _infer_data_type(value: Any) -> DataType:
     return DataType.STRING
 
 
-async def _load_tag_data_types() -> dict[str, DataType]:
-    from sqlalchemy import select
-
-    from app.db.base import session_scope
-    from app.db.models import Tag
-
-    async with session_scope() as session:
-        rows = (await session.execute(select(Tag.name, Tag.data_type))).all()
-    return {name: data_type for name, data_type in rows}
-
-
 class EmbeddedOpcUaServer:
     def __init__(self) -> None:
         self._server = None
@@ -96,7 +86,7 @@ class EmbeddedOpcUaServer:
         server_name = runtime_settings.get("general.site_name") or "Ackiologs"
         require_auth = runtime_settings.get("opcua_server.require_auth")
 
-        tag_data_types = await _load_tag_data_types()
+        tag_data_types = await load_tag_data_types()
 
         server = Server()
         await server.init()

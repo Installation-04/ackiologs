@@ -208,6 +208,9 @@ select {
   border-radius: 4px;
 }
 
+.modbus-mapping-wrap { margin-top: 10px; overflow-x: auto; }
+#modbus-mapping-table { font-size: 13px; }
+
 .settings-form { display: flex; flex-direction: column; gap: 16px; }
 .settings-group {
   background: var(--panel);
