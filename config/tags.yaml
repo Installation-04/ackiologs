@@ -86,3 +86,74 @@ tags:
   #   address: "json:plant/line1/telemetry:sensors.temperature"
   #   data_type: float
   #   engineering_units: degC
+
+  # --- EtherNet/IP example -------------------------------------------------------
+  # Address is the PLC's own symbolic tag name (UDT members / array indices work):
+  # - name: Line1.Speed
+  #   connection: line1_ab
+  #   address: "Program:MainProgram.Line1.Speed"
+  #   data_type: float
+  #   engineering_units: rpm
+  # - name: Recipe3.Setpoint
+  #   connection: line1_ab
+  #   address: "Recipe[3].Setpoint"
+  #   data_type: float
+
+  # --- Siemens S7 example ---------------------------------------------------------
+  # Address is a snap7 PLC-address string: "<area><db?>.<type><offset>[.<bit>]:<TYPE>"
+  # - name: Line1.Pressure
+  #   connection: line1_siemens
+  #   address: "DB1.DBD4:REAL"
+  #   data_type: float
+  #   engineering_units: bar
+  # - name: Line1.Running
+  #   connection: line1_siemens
+  #   address: "DB1.DBX0.0:BOOL"
+  #   data_type: bool
+  # - name: Line1.Mode
+  #   connection: line1_siemens
+  #   address: "M10.0:BOOL"          # merker (M) bit
+  #   data_type: bool
+
+  # --- BACnet/IP example -----------------------------------------------------------
+  # Address format "<device_address>:<object-type>:<instance>[:<property>]"
+  #   (property defaults to present-value)
+  # - name: AHU1.SupplyAirTemp
+  #   connection: bldg_bacnet
+  #   address: "192.168.1.51:analog-input:3"
+  #   data_type: float
+  #   engineering_units: degF
+  # - name: AHU1.FanRunning
+  #   connection: bldg_bacnet
+  #   address: "192.168.1.51:binary-output:1"
+  #   data_type: bool
+
+  # --- SNMP example ------------------------------------------------------------------
+  # Address is the numeric OID:
+  # - name: UPS1.BatteryChargePercent
+  #   connection: rack1_ups
+  #   address: "1.3.6.1.2.1.33.1.2.4.0"   # upsBatteryCapacity (RFC 1628 example)
+  #   data_type: int
+  #   engineering_units: "%"
+
+  # --- Generic HTTP/REST examples ----------------------------------------------------
+  # Whole response body:
+  # - name: Cloud.Status
+  #   connection: cloud_api
+  #   address: "/v1/status"
+  #   data_type: string
+  #
+  # JSON payload, dotted-path extraction: "json:<path>:<dotted.key.path>"
+  # - name: Cloud.SiteA.Temp
+  #   connection: cloud_api
+  #   address: "json:/v1/sites/site-a/telemetry:readings.temperature"
+  #   data_type: float
+  #   engineering_units: degC
+
+  # --- Generic SQL example ------------------------------------------------------------
+  # Address is a read-only SQL query; the first column of the first row is the value:
+  # - name: MES.OEE.Line1
+  #   connection: mes_db
+  #   address: "SELECT oee FROM line_metrics WHERE line = 'Line1' ORDER BY ts DESC LIMIT 1"
+  #   data_type: float
+  #   engineering_units: "%"

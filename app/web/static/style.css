@@ -134,7 +134,23 @@ tr:last-child td { border-bottom: none; }
 .state-cleared { color: var(--good); }
 .state-acked { color: var(--uncertain); }
 
-.trend-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.trend-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.trend-controls-sep { width: 1px; height: 22px; background: var(--border); margin: 0 2px; }
+.trend-jump-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+input[type="datetime-local"] {
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+}
 select {
   padding: 8px 10px;
   border-radius: 8px;
@@ -142,6 +158,8 @@ select {
   background: var(--panel);
   color: var(--text);
 }
+.trend-hint { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.trend-chart-wrap { position: relative; }
 #trend-chart {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -149,6 +167,22 @@ select {
   padding: 12px;
   max-width: 100%;
 }
+.trend-cursor-readout {
+  position: absolute;
+  top: 20px;
+  pointer-events: none;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+  z-index: 5;
+}
+.trend-cursor-readout .readout-time { color: var(--muted); }
+.trend-cursor-readout .readout-value { font-weight: 700; font-variant-numeric: tabular-nums; }
 .trend-wrap { overflow-x: auto; }
 .small-link {
   border: none;
@@ -157,3 +191,73 @@ select {
   cursor: pointer;
   text-decoration: underline;
 }
+
+.section-title { font-size: 15px; margin: 24px 0 10px; }
+.section-title:first-child { margin-top: 0; }
+
+.opcua-status-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+}
+.opcua-status-card code {
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.settings-form { display: flex; flex-direction: column; gap: 16px; }
+.settings-group {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 16px 16px;
+}
+.settings-group legend { font-weight: 700; padding: 0 6px; }
+.settings-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: center;
+  gap: 4px 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row label { font-weight: 600; }
+.settings-row input[type="text"],
+.settings-row input[type="number"],
+.settings-row select {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  max-width: 320px;
+}
+.settings-row input[type="checkbox"] { width: 18px; height: 18px; justify-self: start; }
+.settings-desc {
+  grid-column: 2;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 10px 0 24px;
+}
+#settings-save-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+.settings-save-msg { font-size: 13px; color: var(--muted); }
