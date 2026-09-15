@@ -153,6 +153,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          # Only the two artifacts this workflow explicitly uploads (build-linux's
+          # "linux-release", build-windows's "windows-release") — without a pattern,
+          # this also tries to fetch docker/build-push-action's own internal
+          # "*.dockerbuild" provenance/cache artifact, which isn't meant to be
+          # downloaded this way and fails unreliably (observed: 5 retries then a
+          # hard failure, after both real artifacts had already downloaded fine).
+          pattern: "*-release"
           merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
