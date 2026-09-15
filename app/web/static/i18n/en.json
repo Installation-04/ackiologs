@@ -1,0 +1,136 @@
+{
+  "app": { "brandSub": "Historian" },
+  "login": {
+    "subtitle": "Industrial Data Historian",
+    "username": "username",
+    "password": "password",
+    "signIn": "Sign in",
+    "error": "Invalid username or password."
+  },
+  "nav": {
+    "live": "Live",
+    "trend": "Trend",
+    "alarms": "Alarms",
+    "connections": "Endpoints",
+    "settings": "Settings"
+  },
+  "header": { "signOut": "Sign out" },
+  "live": {
+    "tag": "Tag",
+    "value": "Value",
+    "units": "Units",
+    "quality": "Quality",
+    "updated": "Updated",
+    "trendBtn": "Trend"
+  },
+  "trend": {
+    "range15m": "Last 15 min",
+    "range1h": "Last 1 hour",
+    "range6h": "Last 6 hours",
+    "range24h": "Last 24 hours",
+    "range7d": "Last 7 days",
+    "refresh": "Refresh",
+    "jumpTo": "Jump to",
+    "go": "Go",
+    "resetZoom": "Reset zoom",
+    "resetZoomTitle": "Reset zoom/pan",
+    "hint": "Drag to select a time range and zoom in · scroll to zoom · shift-drag to pan · move the mouse over the chart for exact values"
+  },
+  "alarms": {
+    "time": "Time",
+    "state": "State",
+    "tag": "Tag",
+    "value": "Value",
+    "message": "Message",
+    "ack": "Ack",
+    "ackBtn": "Ack",
+    "ackedBy": "by {name}"
+  },
+  "alarmState": {
+    "active": "active",
+    "cleared": "cleared",
+    "acked": "acked"
+  },
+  "connections": {
+    "outboundTitle": "Outbound connections (polling PLCs / servers)",
+    "connection": "Connection",
+    "protocol": "Protocol",
+    "status": "Status",
+    "tags": "Tags",
+    "address": "Address",
+    "connected": "connected",
+    "disconnected": "disconnected"
+  },
+  "opcua": {
+    "title": "Embedded OPC UA server (host your own data acquisition server)",
+    "running": "running",
+    "stopped": "stopped",
+    "runningDetail": "at {endpoint} — {count} tag(s) exposed, {auth}",
+    "authRequired": "login required",
+    "anonAllowed": "anonymous access allowed",
+    "stoppedDetail": "enable it on the Settings page to let other SCADA/historian systems connect to Ackiologs as an OPC UA data source."
+  },
+  "modbus": {
+    "title": "Embedded Modbus TCP server (read-only tag exposure)",
+    "running": "running",
+    "stopped": "stopped",
+    "runningDetail": "at {endpoint} — {count} tag(s) exposed (float/int/bool tags only; read-only by protocol design)",
+    "stoppedDetail": "enable it on the Settings page to let Modbus-only PLCs/SCADA/HMIs read Ackiologs' live tag values.",
+    "tag": "Tag",
+    "table": "Table",
+    "address": "Address",
+    "discreteInput": "Discrete Input (FC02)",
+    "inputRegister": "Input Register (FC04)"
+  },
+  "settingsPage": {
+    "save": "Save changes",
+    "noChanges": "No changes to save.",
+    "saved": "Saved ({count} changed).",
+    "saveFailed": "Save failed: {msg}",
+    "couldNotLoad": "Could not load settings."
+  },
+  "common": {
+    "loading": "Loading...",
+    "couldNotLoadStatus": "Could not load status.",
+    "dash": "-"
+  },
+  "quality": {
+    "good": "good",
+    "bad": "bad",
+    "uncertain": "uncertain"
+  },
+  "settingsSchema": {
+    "categories": {
+      "General": "General",
+      "Data Retention & Compression": "Data Retention & Compression",
+      "Alarms": "Alarms",
+      "Security": "Security",
+      "Embedded OPC UA Server": "Embedded OPC UA Server",
+      "Embedded Modbus Server": "Embedded Modbus Server",
+      "Display": "Display"
+    },
+    "keys": {
+      "general.site_name": { "label": "Site name", "description": "Shown in the dashboard header and the embedded OPC UA server's name." },
+      "general.timezone": { "label": "Display timezone", "description": "IANA timezone name (e.g. America/Chicago) used to render timestamps in the dashboard. Storage is always UTC." },
+      "retention.days": { "label": "History retention (days)", "description": "0 = keep forever. Prunes tag_values older than this on a background schedule (works on SQLite and plain Postgres too, not just TimescaleDB's native policy)." },
+      "retention.default_deadband_percent": { "label": "Default deadband (% of engineering range)", "description": "Applied to tags that don't set their own deadband_percent. 0 disables deadband compression by default." },
+      "alarms.require_acknowledgment": { "label": "Require operator acknowledgment", "description": "ISA-18.2 style: when on, the dashboard flags active/cleared alarms as needing an explicit Ack until an operator acknowledges them." },
+      "security.access_token_expire_minutes": { "label": "Session token lifetime (minutes)", "description": "How long a login stays valid. Applies to tokens issued after this is changed; existing sessions keep their original expiry." },
+      "opcua_server.enabled": { "label": "Enable embedded OPC UA server", "description": "Host this instance's own OPC UA server so other SCADA/historian systems can connect to Ackiologs as a data source, instead of (or in addition to) Ackiologs connecting out to PLCs." },
+      "opcua_server.port": { "label": "Port", "description": "TCP port for the embedded OPC UA server endpoint (opc.tcp://host:port/ackiologs/server/)." },
+      "opcua_server.require_auth": { "label": "Require login", "description": "If on, OPC UA clients must authenticate with a valid Ackiologs username/password. If off, anonymous read access is allowed." },
+      "modbus_server.enabled": { "label": "Enable embedded Modbus TCP server", "description": "Host this instance as a Modbus TCP server so PLCs/SCADA/HMIs that only speak Modbus can read Ackiologs' live tag values, instead of (or in addition to) Ackiologs polling Modbus devices itself. Read-only by design: tags are exposed as input registers/discrete inputs, which the Modbus protocol has no write function code for." },
+      "modbus_server.port": { "label": "Port", "description": "TCP port for the embedded Modbus server. Defaults to 5020, not the standard 502, since binding 502 requires elevated/root privileges on Linux; set it to 502 explicitly if this instance runs with that privilege." },
+      "display.time_format": { "label": "Time format", "description": "How the dashboard renders clock times." },
+      "display.language": { "label": "Default language", "description": "The dashboard's language for users who haven't picked their own from the language selector." }
+    }
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "de": "Deutsch",
+    "pt": "Português",
+    "zh": "中文"
+  }
+}

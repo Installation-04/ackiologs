@@ -60,6 +60,12 @@ a built-in dashboard.
 - **Endpoints page** — one place to see every outbound connection (protocol,
   status, tag count) alongside both embedded servers' live status, endpoint,
   and (for Modbus) full register map.
+- **Multi-language dashboard** — English, Spanish, French, German, Portuguese,
+  and Chinese, switchable from the login screen or the header at any time (no
+  reload needed); an operator's choice is remembered in their browser, and
+  admins can set the site-wide default under Settings → Display. See
+  `app/web/static/i18n/` for the translation files and `app/web/static/i18n.js`
+  for the loader — adding another language is one more JSON file.
 - **Config-as-code** — `config/connections.yaml` and `config/tags.yaml` fully
   define what's collected; edit and `POST /api/config/reload`, or restart.
 - **Deploys in one command** — Docker Compose, SQLite by default, TimescaleDB as
@@ -109,8 +115,18 @@ and pass `--yes`.
 
 ### Cutting a release
 
-Tag `main` and push it — the [release workflow](.github/workflows/release.yml)
-builds and publishes all four artifacts:
+Releases are tied to the version in `pyproject.toml`, not to merges: bump
+`version` there as part of a PR (following [semver](https://semver.org)) and
+merge it to `main`. The [auto-tag workflow](.github/workflows/auto-tag.yml)
+notices the version changed, tags that commit `vX.Y.Z`, and pushes the tag —
+which is what triggers the [release workflow](.github/workflows/release.yml)
+to build and publish all four artifacts (Linux binary, Windows exe/MSI, Docker
+image) as a GitHub Release. A version that hasn't changed, or a merge that
+doesn't touch `pyproject.toml` at all, cuts no release — so day-to-day PRs
+don't spam a release each.
+
+To cut one manually instead (skipping the version-bump convention), tag and
+push directly:
 
 ```bash
 git tag v1.2.3

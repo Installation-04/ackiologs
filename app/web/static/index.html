@@ -16,28 +16,30 @@
 <body>
   <div id="login-screen" class="screen">
     <div class="login-card">
+      <select id="login-lang-select" class="lang-select login-lang-select" aria-label="Language"></select>
       <h1>Ackiologs</h1>
-      <p class="sub">Industrial Data Historian</p>
-      <input id="login-user" placeholder="username" autocomplete="username" />
-      <input id="login-pass" placeholder="password" type="password" autocomplete="current-password" />
-      <button id="login-btn">Sign in</button>
+      <p class="sub" data-i18n="login.subtitle">Industrial Data Historian</p>
+      <input id="login-user" data-i18n-placeholder="login.username" placeholder="username" autocomplete="username" />
+      <input id="login-pass" data-i18n-placeholder="login.password" placeholder="password" type="password" autocomplete="current-password" />
+      <button id="login-btn" data-i18n="login.signIn">Sign in</button>
       <p id="login-error" class="error" hidden></p>
     </div>
   </div>
 
   <div id="app-screen" class="screen" hidden>
     <header>
-      <div class="brand">Ackiologs <span class="brand-sub">Historian</span></div>
+      <div class="brand">Ackiologs <span class="brand-sub" data-i18n="app.brandSub">Historian</span></div>
       <nav>
-        <button class="nav-btn active" data-view="live">Live</button>
-        <button class="nav-btn" data-view="trend">Trend</button>
-        <button class="nav-btn" data-view="alarms">Alarms</button>
-        <button class="nav-btn" data-view="connections">Endpoints</button>
-        <button class="nav-btn" data-view="settings">Settings</button>
+        <button class="nav-btn active" data-view="live" data-i18n="nav.live">Live</button>
+        <button class="nav-btn" data-view="trend" data-i18n="nav.trend">Trend</button>
+        <button class="nav-btn" data-view="alarms" data-i18n="nav.alarms">Alarms</button>
+        <button class="nav-btn" data-view="connections" data-i18n="nav.connections">Endpoints</button>
+        <button class="nav-btn" data-view="settings" data-i18n="nav.settings">Settings</button>
       </nav>
       <div class="header-right">
+        <select id="lang-select" class="lang-select" aria-label="Language"></select>
         <span id="conn-dot" class="dot" title="live feed"></span>
-        <button id="logout-btn">Sign out</button>
+        <button id="logout-btn" data-i18n="header.signOut">Sign out</button>
       </div>
     </header>
 
@@ -45,7 +47,14 @@
       <section id="view-live" class="view active">
         <table id="live-table">
           <thead>
-            <tr><th>Tag</th><th>Value</th><th>Units</th><th>Quality</th><th>Updated</th><th></th></tr>
+            <tr>
+              <th data-i18n="live.tag">Tag</th>
+              <th data-i18n="live.value">Value</th>
+              <th data-i18n="live.units">Units</th>
+              <th data-i18n="live.quality">Quality</th>
+              <th data-i18n="live.updated">Updated</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -55,22 +64,22 @@
         <div class="trend-controls">
           <select id="trend-tag"></select>
           <select id="trend-range">
-            <option value="900">Last 15 min</option>
-            <option value="3600" selected>Last 1 hour</option>
-            <option value="21600">Last 6 hours</option>
-            <option value="86400">Last 24 hours</option>
-            <option value="604800">Last 7 days</option>
+            <option value="900" data-i18n="trend.range15m">Last 15 min</option>
+            <option value="3600" selected data-i18n="trend.range1h">Last 1 hour</option>
+            <option value="21600" data-i18n="trend.range6h">Last 6 hours</option>
+            <option value="86400" data-i18n="trend.range24h">Last 24 hours</option>
+            <option value="604800" data-i18n="trend.range7d">Last 7 days</option>
           </select>
-          <button id="trend-refresh">Refresh</button>
+          <button id="trend-refresh" data-i18n="trend.refresh">Refresh</button>
           <span class="trend-controls-sep"></span>
           <label class="trend-jump-label">
-            Jump to
+            <span data-i18n="trend.jumpTo">Jump to</span>
             <input id="trend-jump-time" type="datetime-local" step="60" />
           </label>
-          <button id="trend-jump-btn">Go</button>
-          <button id="trend-zoom-reset" title="Reset zoom/pan">Reset zoom</button>
+          <button id="trend-jump-btn" data-i18n="trend.go">Go</button>
+          <button id="trend-zoom-reset" data-i18n-title="trend.resetZoomTitle" title="Reset zoom/pan" data-i18n="trend.resetZoom">Reset zoom</button>
         </div>
-        <div class="trend-hint">Drag to select a time range and zoom in · scroll to zoom · shift-drag to pan · move the mouse over the chart for exact values</div>
+        <div class="trend-hint" data-i18n="trend.hint">Drag to select a time range and zoom in · scroll to zoom · shift-drag to pan · move the mouse over the chart for exact values</div>
         <div class="trend-chart-wrap">
           <canvas id="trend-chart" height="90"></canvas>
           <div id="trend-cursor-readout" class="trend-cursor-readout" hidden></div>
@@ -79,36 +88,54 @@
 
       <section id="view-alarms" class="view">
         <table id="alarms-table">
-          <thead><tr><th>Time</th><th>State</th><th>Tag</th><th>Value</th><th>Message</th><th>Ack</th></tr></thead>
+          <thead>
+            <tr>
+              <th data-i18n="alarms.time">Time</th>
+              <th data-i18n="alarms.state">State</th>
+              <th data-i18n="alarms.tag">Tag</th>
+              <th data-i18n="alarms.value">Value</th>
+              <th data-i18n="alarms.message">Message</th>
+              <th data-i18n="alarms.ack">Ack</th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
       </section>
 
       <section id="view-connections" class="view">
-        <h2 class="section-title">Outbound connections (polling PLCs / servers)</h2>
+        <h2 class="section-title" data-i18n="connections.outboundTitle">Outbound connections (polling PLCs / servers)</h2>
         <table id="connections-table">
-          <thead><tr><th>Connection</th><th>Protocol</th><th>Status</th><th>Tags</th><th>Address</th></tr></thead>
+          <thead>
+            <tr>
+              <th data-i18n="connections.connection">Connection</th>
+              <th data-i18n="connections.protocol">Protocol</th>
+              <th data-i18n="connections.status">Status</th>
+              <th data-i18n="connections.tags">Tags</th>
+              <th data-i18n="connections.address">Address</th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
 
-        <h2 class="section-title">Embedded OPC UA server (host your own data acquisition server)</h2>
-        <div id="opcua-server-status" class="opcua-status-card">Loading...</div>
+        <h2 class="section-title" data-i18n="opcua.title">Embedded OPC UA server (host your own data acquisition server)</h2>
+        <div id="opcua-server-status" class="opcua-status-card" data-i18n="common.loading">Loading...</div>
 
-        <h2 class="section-title">Embedded Modbus TCP server (read-only tag exposure)</h2>
-        <div id="modbus-server-status" class="opcua-status-card">Loading...</div>
+        <h2 class="section-title" data-i18n="modbus.title">Embedded Modbus TCP server (read-only tag exposure)</h2>
+        <div id="modbus-server-status" class="opcua-status-card" data-i18n="common.loading">Loading...</div>
         <div id="modbus-server-mapping" class="modbus-mapping-wrap"></div>
       </section>
 
       <section id="view-settings" class="view">
-        <div id="settings-form" class="settings-form">Loading...</div>
+        <div id="settings-form" class="settings-form" data-i18n="common.loading">Loading...</div>
         <div class="settings-actions">
-          <button id="settings-save-btn">Save changes</button>
+          <button id="settings-save-btn" data-i18n="settingsPage.save">Save changes</button>
           <span id="settings-save-msg" class="settings-save-msg" hidden></span>
         </div>
       </section>
     </main>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
