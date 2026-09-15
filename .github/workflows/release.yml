@@ -76,10 +76,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt pyinstaller
+      - run: pip install -r requirements.txt pyinstaller pywin32
+      - name: Finish pywin32 install
+        # pywin32's wheel doesn't register pywintypes/pythoncom on PATH by itself —
+        # normally done by its post-install script, which needs to run once so
+        # PyInstaller's pywin32 hooks can find those DLLs when freezing the service exe.
+        shell: pwsh
+        run: |
+          $sitePackages = python -c "import site; print(site.getsitepackages()[0])"
+          python "$sitePackages\pywin32_postinstall.py" -install
       - run: python scripts/stamp_version.py "${{ needs.version.outputs.version }}"
       - name: Build onedir bundle
         run: pyinstaller --noconfirm --clean packaging/pyinstaller/ackiologs.spec
+      - name: Build background service exe
+        # A separate exe (not just ackiologs.exe run differently) because it hosts the
+        # app through pywin32's ServiceFramework instead of a plain console main() — see
+        # packaging/pyinstaller/service_run.py. Placed alongside ackiologs.exe so the MSI
+        # (built below) can register it as a Windows Service.
+        run: |
+          pyinstaller --noconfirm --clean packaging/pyinstaller/ackiologs_service.spec
+          Copy-Item dist\ackiologs-service.exe dist\ackiologs\ackiologs-service.exe
+        shell: pwsh
       - name: Package portable zip
         shell: pwsh
         run: |

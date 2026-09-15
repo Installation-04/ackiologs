@@ -14,13 +14,25 @@
       -arch x64 -o ackiologs.msi
 
   Layout installed:
-    %ProgramFiles%\Ackiologs\            <- ackiologs.exe + bundled runtime/static files
-    %LocalAppData%\Ackiologs\config\     <- default tags.yaml / connections.yaml (user-editable, no admin needed)
-    %LocalAppData%\Ackiologs\data\       <- SQLite database (created on first run)
+    %ProgramFiles%\Ackiologs\            <- ackiologs.exe (manual/console) + ackiologs-service.exe + bundled runtime/static files
+    %ProgramData%\Ackiologs\config\      <- default tags.yaml / connections.yaml (writable by any user, no admin needed)
+    %ProgramData%\Ackiologs\data\        <- SQLite database (created on first run)
+
+  Ackiologs itself is registered and started as a Windows Service ("Ackiologs
+  Historian", auto-start, LocalSystem) running ackiologs-service.exe — a
+  pywin32-based wrapper (packaging/pyinstaller/service_run.py) around the same
+  ASGI app the console exe runs, so once installed it runs permanently in the
+  background (survives logoff, starts at boot, no console window) instead of
+  needing a window kept open. ackiologs.exe (the same console build as the
+  portable zip) is also installed and shortcut-launchable for manual/foreground
+  use — e.g. to run a second instance on another port, or when the service is
+  stopped for troubleshooting.
 
   ACKIOLOGS_TAGS_CONFIG_PATH / ACKIOLOGS_CONNECTIONS_CONFIG_PATH / ACKIOLOGS_DATABASE_URL
-  are set as user environment variables so the exe finds them regardless of where
-  Program Files puts the binaries.
+  are set as machine-wide (System) environment variables pointing at ProgramData
+  so both the service (which runs as LocalSystem, and so only ever sees
+  machine-wide environment variables, never a particular user's) and a manually
+  launched ackiologs.exe read/write the same config and data.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
   <Package
@@ -43,7 +55,7 @@
       <Directory Id="INSTALLFOLDER" Name="Ackiologs" />
     </StandardDirectory>
 
-    <StandardDirectory Id="LocalAppDataFolder">
+    <StandardDirectory Id="CommonAppDataFolder">
       <Directory Id="APPDATAFOLDER" Name="Ackiologs">
         <Directory Id="APPDATACONFIGFOLDER" Name="config" />
         <Directory Id="APPDATADATAFOLDER" Name="data" />
@@ -54,12 +66,40 @@
       <Directory Id="AckiologsShortcutFolder" Name="Ackiologs" />
     </StandardDirectory>
 
-    <!-- Program files: everything PyInstaller collected (ackiologs.exe + deps) -->
+    <!-- Program files: everything PyInstaller collected (ackiologs.exe, ackiologs-service.exe + deps) —
+         ackiologs-service.exe is excluded here because it needs its own Component below,
+         to attach ServiceInstall/ServiceControl to it. -->
     <ComponentGroup Id="ProgramFilesGroup" Directory="INSTALLFOLDER">
-      <Files Include="$(var.SourceDir)\**" />
+      <Files Include="$(var.SourceDir)\**">
+        <Exclude Files="$(var.SourceDir)\ackiologs-service.exe" />
+      </Files>
     </ComponentGroup>
 
-    <!-- Default config, copied into the user's LocalAppData so it's editable without admin rights -->
+    <!-- The background service: registered, started, stopped, and removed by MSI
+         install/uninstall so Ackiologs runs permanently — auto-start, no console
+         window — the moment setup finishes, rather than only when someone signs
+         in and launches it manually. -->
+    <Component Id="AckiologsServiceComponent" Directory="INSTALLFOLDER" Guid="4c9e7f1b-6a3d-4e8f-9b2c-5d7a1e3f9c06">
+      <File Id="AckiologsServiceExe" Source="$(var.SourceDir)\ackiologs-service.exe" KeyPath="yes" />
+      <ServiceInstall Id="AckiologsServiceInstall"
+                       Name="Ackiologs"
+                       DisplayName="Ackiologs Historian"
+                       Description="Industrial data historian: collects, stores, and serves plant data. Runs permanently in the background; stop/start it here or from the dashboard's Settings page."
+                       Type="ownProcess"
+                       Start="auto"
+                       ErrorControl="normal"
+                       Account="LocalSystem" />
+      <ServiceControl Id="AckiologsServiceControl"
+                       Name="Ackiologs"
+                       Start="install"
+                       Stop="both"
+                       Remove="uninstall"
+                       Wait="yes" />
+    </Component>
+
+    <!-- Default config, copied into ProgramData so it's shared by the service (which
+         runs as LocalSystem) and any manually launched ackiologs.exe alike, and
+         stays editable without admin rights (see PermissionEx below). -->
     <Component Id="DefaultTagsConfig" Directory="APPDATACONFIGFOLDER" Guid="8a2d6a52-2f1a-4a58-9d61-9c1b6e4d1a01">
       <File Id="TagsYaml" Source="$(var.ConfigDir)\tags.yaml" KeyPath="yes" />
     </Component>
@@ -67,37 +107,61 @@
       <File Id="ConnectionsYaml" Source="$(var.ConfigDir)\connections.yaml" KeyPath="yes" />
     </Component>
 
-    <!-- Ensure the (empty, at install time) data directory exists -->
+    <!-- Ensure the (empty, at install time) data directory exists, writable by any
+         user (the service runs as LocalSystem; a manually launched exe runs as
+         whichever user started it) without requiring admin rights. -->
     <Component Id="DataDirPlaceholder" Directory="APPDATADATAFOLDER" Guid="1b7a4c9e-5f3a-4b6d-9a2e-7c8d1f0a3b03">
-      <CreateFolder />
+      <CreateFolder>
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </CreateFolder>
+    </Component>
+    <Component Id="ConfigDirPermissions" Directory="APPDATACONFIGFOLDER" Guid="7b1e9c3a-4f6d-4a8e-9c1f-3e5b7a9d1c07">
+      <CreateFolder>
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </CreateFolder>
+      <RegistryValue Root="HKLM" Key="Software\Ackiologs" Name="ConfigDirPermissioned" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
-    <!-- Point the exe at the per-user config/data location regardless of Program Files' location -->
+    <!-- Point both the service and a manually launched exe at the shared ProgramData
+         config/data location, machine-wide (the service runs as LocalSystem, which
+         only ever sees machine-wide environment variables, never a signed-in user's). -->
     <Component Id="EnvironmentVars" Directory="APPDATAFOLDER" Guid="e4f6a8b2-3c9d-4a1e-8b5f-0d2a6c9e4b04">
-        <Environment Id="EnvTagsPath" Name="ACKIOLOGS_TAGS_CONFIG_PATH" Value="[APPDATACONFIGFOLDER]tags.yaml" Action="set" Part="all" System="no" />
-        <Environment Id="EnvConnectionsPath" Name="ACKIOLOGS_CONNECTIONS_CONFIG_PATH" Value="[APPDATACONFIGFOLDER]connections.yaml" Action="set" Part="all" System="no" />
-        <Environment Id="EnvDatabaseUrl" Name="ACKIOLOGS_DATABASE_URL" Value="sqlite+aiosqlite:///[APPDATADATAFOLDER]ackiologs.db" Action="set" Part="all" System="no" />
-        <RegistryValue Root="HKCU" Key="Software\Ackiologs" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+        <Environment Id="EnvTagsPath" Name="ACKIOLOGS_TAGS_CONFIG_PATH" Value="[APPDATACONFIGFOLDER]tags.yaml" Action="set" Part="all" System="yes" />
+        <Environment Id="EnvConnectionsPath" Name="ACKIOLOGS_CONNECTIONS_CONFIG_PATH" Value="[APPDATACONFIGFOLDER]connections.yaml" Action="set" Part="all" System="yes" />
+        <Environment Id="EnvDatabaseUrl" Name="ACKIOLOGS_DATABASE_URL" Value="sqlite+aiosqlite:///[APPDATADATAFOLDER]ackiologs.db" Action="set" Part="all" System="yes" />
+        <RegistryValue Root="HKLM" Key="Software\Ackiologs" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
-    <!-- Start Menu shortcut -->
-    <Component Id="StartMenuShortcut" Directory="AckiologsShortcutFolder" Guid="9d1e3f5a-7b2c-4d6e-8a9f-1e3c5b7d9a05">
-      <Shortcut Id="AckiologsStartMenuShortcut"
-                Name="Ackiologs Historian"
-                Description="Start the Ackiologs industrial historian"
-                Target="[INSTALLFOLDER]ackiologs.exe"
+    <!-- Start Menu shortcuts -->
+    <Component Id="DashboardShortcut" Directory="AckiologsShortcutFolder" Guid="9d1e3f5a-7b2c-4d6e-8a9f-1e3c5b7d9a05">
+      <Shortcut Id="AckiologsDashboardShortcut"
+                Name="Ackiologs Dashboard"
+                Description="Open the Ackiologs dashboard (the background service starts it automatically)"
+                Target="[WindowsFolder]explorer.exe"
+                Arguments="http://localhost:8000"
                 WorkingDirectory="INSTALLFOLDER" />
       <RemoveFolder Id="RemoveAckiologsShortcutFolder" On="uninstall" />
-      <RegistryValue Root="HKCU" Key="Software\Ackiologs" Name="ShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+      <RegistryValue Root="HKLM" Key="Software\Ackiologs" Name="ShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+    <Component Id="ManualShortcut" Directory="AckiologsShortcutFolder" Guid="2f4a6c8e-1b3d-4f5a-8c9e-6a1b3d5f7c08">
+      <Shortcut Id="AckiologsManualShortcut"
+                Name="Ackiologs Historian (Manual)"
+                Description="Run Ackiologs manually in a console window — for troubleshooting when the background service is stopped"
+                Target="[INSTALLFOLDER]ackiologs.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKLM" Key="Software\Ackiologs" Name="ManualShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
     <Feature Id="MainFeature" Title="Ackiologs Historian" Level="1">
       <ComponentGroupRef Id="ProgramFilesGroup" />
+      <ComponentRef Id="AckiologsServiceComponent" />
       <ComponentRef Id="DefaultTagsConfig" />
       <ComponentRef Id="DefaultConnectionsConfig" />
       <ComponentRef Id="DataDirPlaceholder" />
+      <ComponentRef Id="ConfigDirPermissions" />
       <ComponentRef Id="EnvironmentVars" />
-      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DashboardShortcut" />
+      <ComponentRef Id="ManualShortcut" />
     </Feature>
 
   </Package>

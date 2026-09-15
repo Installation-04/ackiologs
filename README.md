@@ -84,16 +84,31 @@ see [Releases](https://github.com/Installation-04/ackiologs/releases):
 |----------|----------|
 | Docker (any OS) | `ghcr.io/installation-04/ackiologs:X.Y.Z` (and `:latest`) |
 | Linux (x86_64) | `ackiologs-linux-x86_64-vX.Y.Z.tar.gz` — standalone binary, no Python required |
-| Windows (x86_64) | `ackiologs-windows-x86_64-vX.Y.Z.msi` — installer (Start Menu shortcut, per-user config/data) |
+| Windows (x86_64) | `ackiologs-windows-x86_64-vX.Y.Z.msi` — permanent install, runs as a background Windows Service |
 | Windows (x86_64) | `ackiologs-windows-x86_64-vX.Y.Z.zip` — portable exe, no install needed |
 
 The Linux tarball and Windows zip both bundle a `config/` folder with the same
 example tags/connections as this repo — edit those files next to the binary,
 or point `ACKIOLOGS_TAGS_CONFIG_PATH`/`ACKIOLOGS_CONNECTIONS_CONFIG_PATH` (and
-`ACKIOLOGS_DATABASE_URL`) elsewhere. The MSI installs the program into
-`%ProgramFiles%\Ackiologs` and its editable config/data into
-`%LocalAppData%\Ackiologs`, wired together automatically via user environment
-variables — no admin rights needed to edit tags or connections after install.
+`ACKIOLOGS_DATABASE_URL`) elsewhere.
+
+The Windows **MSI** is the "install it once, it just runs" option: it
+registers Ackiologs as a real Windows Service (`services.msc` / `sc query
+Ackiologs`) that starts automatically at boot, keeps running in the
+background with no console window and no one signed in, and restarts with
+the OS after a reboot. Setup adds a "Ackiologs Dashboard" Start Menu shortcut
+(opens `http://localhost:8000`) plus an "Ackiologs Historian (Manual)"
+shortcut that runs the same console build as the portable zip, for
+troubleshooting when the service is stopped. Program files go in
+`%ProgramFiles%\Ackiologs`; config and data live in `%ProgramData%\Ackiologs`
+(shared by the service and a manual run alike), writable without admin
+rights, wired up automatically via machine-wide environment variables.
+
+The Windows **zip** is the portable option: unzip it anywhere and run
+`ackiologs.exe` yourself — it opens a console window and only runs while
+that window (and your session) stays open, nothing is installed or
+registered as a service. Use it for a quick trial, a USB-stick install, or
+running a second instance on another port alongside the installed service.
 
 `GET /api/version` reports the running build's version on any of the four.
 
