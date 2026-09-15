@@ -30,6 +30,38 @@ it over a REST/WebSocket API and a built-in dashboard.
 - **Deploys in one command** — Docker Compose, SQLite by default, TimescaleDB as
   a one-line overlay.
 
+## Downloads
+
+Every tagged release (`vX.Y.Z`) publishes four artifacts from the same commit —
+see [Releases](https://github.com/Installation-04/ackiologs/releases):
+
+| Platform | Artifact |
+|----------|----------|
+| Docker (any OS) | `ghcr.io/installation-04/ackiologs:X.Y.Z` (and `:latest`) |
+| Linux (x86_64) | `ackiologs-linux-x86_64-vX.Y.Z.tar.gz` — standalone binary, no Python required |
+| Windows (x86_64) | `ackiologs-windows-x86_64-vX.Y.Z.msi` — installer (Start Menu shortcut, per-user config/data) |
+| Windows (x86_64) | `ackiologs-windows-x86_64-vX.Y.Z.zip` — portable exe, no install needed |
+
+The Linux tarball and Windows zip both bundle a `config/` folder with the same
+example tags/connections as this repo — edit those files next to the binary,
+or point `ACKIOLOGS_TAGS_CONFIG_PATH`/`ACKIOLOGS_CONNECTIONS_CONFIG_PATH` (and
+`ACKIOLOGS_DATABASE_URL`) elsewhere. The MSI installs the program into
+`%ProgramFiles%\Ackiologs` and its editable config/data into
+`%LocalAppData%\Ackiologs`, wired together automatically via user environment
+variables — no admin rights needed to edit tags or connections after install.
+
+`GET /api/version` reports the running build's version on any of the four.
+
+### Cutting a release
+
+Tag `main` and push it — the [release workflow](.github/workflows/release.yml)
+builds and publishes all four artifacts:
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
 ## Quickstart (Docker — recommended)
 
 ```bash

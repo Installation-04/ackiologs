@@ -11,12 +11,14 @@ from app.api.routes_connections import router as connections_router
 from app.api.routes_history import router as history_router
 from app.api.routes_live_ws import router as live_ws_router
 from app.api.routes_tags import router as tags_router
+from app._version import __version__
 from app.config import get_settings
 from app.connectors.base import Sample
 from app.core.security import ensure_default_admin
 from app.core.supervisor import ConnectorSupervisor
 from app.db.bootstrap import init_db
 from app.ingest.pipeline import IngestPipeline
+from app.paths import bundled_static_dir, default_data_dir, sqlite_file_path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("ackiologs")
@@ -26,9 +28,8 @@ logger = logging.getLogger("ackiologs")
 async def lifespan(app: FastAPI):
     settings = get_settings()
 
-    import os
-
-    os.makedirs("data", exist_ok=True)
+    sqlite_path = sqlite_file_path(settings.database_url)
+    (sqlite_path.parent if sqlite_path else default_data_dir()).mkdir(parents=True, exist_ok=True)
 
     await init_db()
     await ensure_default_admin()
@@ -56,7 +57,7 @@ async def lifespan(app: FastAPI):
         await asyncio.gather(pipeline_task, return_exceptions=True)
 
 
-app = FastAPI(title="Ackiologs Industrial Historian", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Ackiologs Industrial Historian", version=__version__, lifespan=lifespan)
 
 settings = get_settings()
 app.add_middleware(
@@ -79,4 +80,9 @@ async def health():
     return {"status": "ok"}
 
 
-app.mount("/", StaticFiles(directory="app/web/static", html=True), name="web")
+@app.get("/api/version")
+async def version():
+    return {"version": __version__}
+
+
+app.mount("/", StaticFiles(directory=str(bundled_static_dir()), html=True), name="web")
