@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+data/
+*.db
+*.egg-info/
+.pytest_cache/
+
+# PyInstaller / packaging build output
+build/
+dist/
+*.spec.bak
+*.msi
+*.tar.gz
+*.zip
