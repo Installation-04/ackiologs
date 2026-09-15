@@ -8,6 +8,20 @@ or TimescaleDB (production scale); trend it (with a FactoryTalk/PI-style crossha
 cursor and drag-to-zoom), alarm on it, and expose it over a REST/WebSocket API and
 a built-in dashboard.
 
+## Screenshots
+
+| Live values | Trend chart |
+|---|---|
+| ![Live values table](docs/screenshots/live.png) | ![Trend chart with crosshair](docs/screenshots/trend.png) |
+
+| Alarms | Alarm history |
+|---|---|
+| ![Active/cleared alarms](docs/screenshots/alarms.png) | ![Searchable alarm history](docs/screenshots/history.png) |
+
+| Endpoints | Settings |
+|---|---|
+| ![Connections and embedded servers](docs/screenshots/endpoints.png) | ![Live-editable settings](docs/screenshots/settings.png) |
+
 ## Features
 
 - **Ten protocols out of the box** — OPC UA (subscriptions), Modbus TCP/RTU
