@@ -95,12 +95,18 @@ jobs:
       - name: Install WiX
         shell: pwsh
         run: |
-          dotnet tool install -g wix
+          # Pinned to 6.0.1, the last release before WiX v7 started blocking every
+          # command until its new Open Source Maintenance Fee EULA is accepted
+          # (https://github.com/wixtoolset/issues/issues/9196) — v6 introduced the
+          # fee but didn't enforce it at the CLI, so this avoids CI needing to deal
+          # with EULA acceptance at all. Revisit the pin (and EULA acceptance) if a
+          # future WiX v6.x feature/fix is needed.
+          dotnet tool install -g wix --version 6.0.1
           echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Build MSI
         shell: pwsh
         run: |
-          wix extension add WixToolset.Util.wixext
+          wix extension add WixToolset.Util.wixext/6.0.1
           wix build packaging\windows\ackiologs.wxs `
             -ext WixToolset.Util.wixext `
             -d SourceDir=dist\ackiologs `
