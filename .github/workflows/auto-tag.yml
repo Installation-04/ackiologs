@@ -2,10 +2,10 @@ name: Auto-tag release
 
 # Ties every release to an explicit, reviewed version bump instead of cutting one
 # on every merge: whenever pyproject.toml's `version` changes on main, tag that
-# commit `vX.Y.Z` and push the tag. Pushing the tag is what actually triggers
-# release.yml (builds the Linux/Windows/Docker artifacts and publishes the
-# GitHub Release) — this workflow's only job is deciding *when* that should
-# happen, from the single source of truth for the version.
+# commit `vX.Y.Z`, push the tag, and dispatch release.yml (builds the
+# Linux/Windows/Docker artifacts and publishes the GitHub Release) for it — this
+# workflow's only job is deciding *when* that should happen, from the single
+# source of truth for the version.
 on:
   push:
     branches: [main]
@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   tag:
@@ -37,15 +38,28 @@ jobs:
           echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Tag and push if this version hasn't been released yet
+        id: tagpush
         if: steps.v.outputs.skip == 'false'
         run: |
           set -euo pipefail
           TAG="v${{ steps.v.outputs.version }}"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists; this version was already released. Skipping."
+            echo "tagged=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$TAG" -m "Release $TAG"
           git push origin "$TAG"
+          echo "tagged=true" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      # A tag pushed with the default GITHUB_TOKEN doesn't trigger other workflows'
+      # `push: tags:` rules (GitHub blocks a token-authored push from cascading, to
+      # avoid recursive workflow chains) — so trigger release.yml explicitly instead.
+      - name: Dispatch the release build
+        if: steps.tagpush.outputs.tagged == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run release.yml --ref "${{ steps.tagpush.outputs.tag }}"
