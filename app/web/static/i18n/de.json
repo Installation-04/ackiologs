@@ -1,5 +1,7 @@
 {
-  "app": { "brandSub": "Historian" },
+  "app": {
+    "brandSub": "Historian"
+  },
   "login": {
     "subtitle": "Industrieller Datenhistorian",
     "username": "Benutzername",
@@ -12,9 +14,12 @@
     "trend": "Trend",
     "alarms": "Alarme",
     "connections": "Verbindungen",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "history": "Verlauf"
   },
-  "header": { "signOut": "Abmelden" },
+  "header": {
+    "signOut": "Abmelden"
+  },
   "live": {
     "tag": "Tag",
     "value": "Wert",
@@ -50,6 +55,21 @@
     "active": "aktiv",
     "cleared": "behoben",
     "acked": "quittiert"
+  },
+  "history": {
+    "from": "Von",
+    "to": "Bis",
+    "tag": "Tag",
+    "allTags": "Alle Tags",
+    "allStates": "Alle Status",
+    "search": "Suchen",
+    "reset": "Zurücksetzen",
+    "alarmName": "Alarm",
+    "condition": "Bedingung",
+    "priority": "Priorität",
+    "ackedBy": "Quittiert von",
+    "prev": "Zurück",
+    "next": "Weiter"
   },
   "connections": {
     "outboundTitle": "Ausgehende Verbindungen (Abfrage von SPS / Servern)",
@@ -110,19 +130,58 @@
       "Display": "Anzeige"
     },
     "keys": {
-      "general.site_name": { "label": "Standortname", "description": "Wird im Dashboard-Header und im Namen des eingebetteten OPC-UA-Servers angezeigt." },
-      "general.timezone": { "label": "Anzeigezeitzone", "description": "IANA-Zeitzonenname (z. B. Europe/Berlin), der zum Anzeigen von Zeitstempeln im Dashboard verwendet wird. Die Speicherung erfolgt immer in UTC." },
-      "retention.days": { "label": "Historienaufbewahrung (Tage)", "description": "0 = für immer aufbewahren. Löscht tag_values, die älter als dieser Wert sind, nach einem Hintergrundzeitplan (funktioniert auch auf SQLite und einfachem Postgres, nicht nur mit der nativen TimescaleDB-Richtlinie)." },
-      "retention.default_deadband_percent": { "label": "Standard-Totband (% des Messbereichs)", "description": "Wird auf Tags angewendet, die kein eigenes deadband_percent festlegen. 0 deaktiviert die Totband-Komprimierung standardmäßig." },
-      "alarms.require_acknowledgment": { "label": "Bediener-Quittierung erforderlich", "description": "ISA-18.2-Stil: Wenn aktiviert, markiert das Dashboard aktive/behobene Alarme als quittierungspflichtig, bis ein Bediener sie bestätigt." },
-      "security.access_token_expire_minutes": { "label": "Gültigkeitsdauer des Sitzungstokens (Minuten)", "description": "Wie lange eine Anmeldung gültig bleibt. Gilt für Tokens, die nach dieser Änderung ausgestellt werden; bestehende Sitzungen behalten ihren ursprünglichen Ablauf." },
-      "opcua_server.enabled": { "label": "Eingebetteten OPC-UA-Server aktivieren", "description": "Hosten Sie den eigenen OPC-UA-Server dieser Instanz, damit andere SCADA-/Historian-Systeme sich als Datenquelle mit Ackiologs verbinden können, anstatt (oder zusätzlich dazu), dass Ackiologs sich mit SPS verbindet." },
-      "opcua_server.port": { "label": "Port", "description": "TCP-Port für den Endpunkt des eingebetteten OPC-UA-Servers (opc.tcp://host:port/ackiologs/server/)." },
-      "opcua_server.require_auth": { "label": "Anmeldung erforderlich", "description": "Wenn aktiviert, müssen sich OPC-UA-Clients mit einem gültigen Ackiologs-Benutzernamen/-Passwort authentifizieren. Wenn deaktiviert, ist anonymer Lesezugriff erlaubt." },
-      "modbus_server.enabled": { "label": "Eingebetteten Modbus-TCP-Server aktivieren", "description": "Hosten Sie diese Instanz als Modbus-TCP-Server, damit SPS/SCADA/HMI, die nur Modbus sprechen, die Live-Tag-Werte von Ackiologs lesen können, anstatt (oder zusätzlich dazu), dass Ackiologs Modbus-Geräte abfragt. Schreibgeschützt durch Design: Tags werden als Eingaberegister/diskrete Eingänge freigegeben, für die das Modbus-Protokoll keinen Schreib-Funktionscode hat." },
-      "modbus_server.port": { "label": "Port", "description": "TCP-Port für den eingebetteten Modbus-Server. Standardmäßig 5020, nicht der Standard 502, da die Bindung an Port 502 unter Linux erhöhte/Root-Rechte erfordert; setzen Sie ihn explizit auf 502, wenn diese Instanz mit diesem Recht läuft." },
-      "display.time_format": { "label": "Zeitformat", "description": "Wie das Dashboard Uhrzeiten anzeigt." },
-      "display.language": { "label": "Standardsprache", "description": "Die Dashboard-Sprache für Benutzer, die keine eigene über die Sprachauswahl festgelegt haben." }
+      "general.site_name": {
+        "label": "Standortname",
+        "description": "Wird im Dashboard-Header und im Namen des eingebetteten OPC-UA-Servers angezeigt."
+      },
+      "general.timezone": {
+        "label": "Anzeigezeitzone",
+        "description": "IANA-Zeitzonenname (z. B. Europe/Berlin), der zum Anzeigen von Zeitstempeln im Dashboard verwendet wird. Die Speicherung erfolgt immer in UTC."
+      },
+      "retention.days": {
+        "label": "Historienaufbewahrung (Tage)",
+        "description": "0 = für immer aufbewahren. Löscht tag_values, die älter als dieser Wert sind, nach einem Hintergrundzeitplan (funktioniert auch auf SQLite und einfachem Postgres, nicht nur mit der nativen TimescaleDB-Richtlinie)."
+      },
+      "retention.default_deadband_percent": {
+        "label": "Standard-Totband (% des Messbereichs)",
+        "description": "Wird auf Tags angewendet, die kein eigenes deadband_percent festlegen. 0 deaktiviert die Totband-Komprimierung standardmäßig."
+      },
+      "alarms.require_acknowledgment": {
+        "label": "Bediener-Quittierung erforderlich",
+        "description": "ISA-18.2-Stil: Wenn aktiviert, markiert das Dashboard aktive/behobene Alarme als quittierungspflichtig, bis ein Bediener sie bestätigt."
+      },
+      "security.access_token_expire_minutes": {
+        "label": "Gültigkeitsdauer des Sitzungstokens (Minuten)",
+        "description": "Wie lange eine Anmeldung gültig bleibt. Gilt für Tokens, die nach dieser Änderung ausgestellt werden; bestehende Sitzungen behalten ihren ursprünglichen Ablauf."
+      },
+      "opcua_server.enabled": {
+        "label": "Eingebetteten OPC-UA-Server aktivieren",
+        "description": "Hosten Sie den eigenen OPC-UA-Server dieser Instanz, damit andere SCADA-/Historian-Systeme sich als Datenquelle mit Ackiologs verbinden können, anstatt (oder zusätzlich dazu), dass Ackiologs sich mit SPS verbindet."
+      },
+      "opcua_server.port": {
+        "label": "Port",
+        "description": "TCP-Port für den Endpunkt des eingebetteten OPC-UA-Servers (opc.tcp://host:port/ackiologs/server/)."
+      },
+      "opcua_server.require_auth": {
+        "label": "Anmeldung erforderlich",
+        "description": "Wenn aktiviert, müssen sich OPC-UA-Clients mit einem gültigen Ackiologs-Benutzernamen/-Passwort authentifizieren. Wenn deaktiviert, ist anonymer Lesezugriff erlaubt."
+      },
+      "modbus_server.enabled": {
+        "label": "Eingebetteten Modbus-TCP-Server aktivieren",
+        "description": "Hosten Sie diese Instanz als Modbus-TCP-Server, damit SPS/SCADA/HMI, die nur Modbus sprechen, die Live-Tag-Werte von Ackiologs lesen können, anstatt (oder zusätzlich dazu), dass Ackiologs Modbus-Geräte abfragt. Schreibgeschützt durch Design: Tags werden als Eingaberegister/diskrete Eingänge freigegeben, für die das Modbus-Protokoll keinen Schreib-Funktionscode hat."
+      },
+      "modbus_server.port": {
+        "label": "Port",
+        "description": "TCP-Port für den eingebetteten Modbus-Server. Standardmäßig 5020, nicht der Standard 502, da die Bindung an Port 502 unter Linux erhöhte/Root-Rechte erfordert; setzen Sie ihn explizit auf 502, wenn diese Instanz mit diesem Recht läuft."
+      },
+      "display.time_format": {
+        "label": "Zeitformat",
+        "description": "Wie das Dashboard Uhrzeiten anzeigt."
+      },
+      "display.language": {
+        "label": "Standardsprache",
+        "description": "Die Dashboard-Sprache für Benutzer, die keine eigene über die Sprachauswahl festgelegt haben."
+      }
     }
   },
   "languages": {

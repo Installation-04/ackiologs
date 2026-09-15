@@ -41,6 +41,7 @@
       loadOpcuaServerStatus();
       loadModbusServerStatus();
       if (document.querySelector('.nav-btn[data-view="settings"]').classList.contains("active")) loadSettings();
+      if (document.querySelector('.nav-btn[data-view="history"]').classList.contains("active")) loadHistory();
     }
   }
 
@@ -117,6 +118,7 @@
       if (btn.dataset.view === "trend") loadTrend();
       if (btn.dataset.view === "settings") loadSettings();
       if (btn.dataset.view === "connections") { loadOpcuaServerStatus(); loadModbusServerStatus(); }
+      if (btn.dataset.view === "history") loadHistory({ resetOffset: true });
     });
   });
 
@@ -152,6 +154,17 @@
         document.querySelector('.nav-btn[data-view="trend"]').click();
       })
     );
+
+    const historyTagSelect = $("#history-tag");
+    const prevHistoryTag = historyTagSelect.value;
+    historyTagSelect.innerHTML = `<option value="">${t("history.allTags")}</option>`;
+    for (const tag of tags) {
+      const opt = document.createElement("option");
+      opt.value = tag.name;
+      opt.textContent = tag.name;
+      historyTagSelect.appendChild(opt);
+    }
+    if (prevHistoryTag && tags.some((tag) => tag.name === prevHistoryTag)) historyTagSelect.value = prevHistoryTag;
   }
 
   function fmt(v) {
@@ -370,6 +383,69 @@
       );
     } catch (e) { /* ignore transient errors */ }
   }
+
+  // --- Alarm History page ---
+  const historyState = { offset: 0, limit: 50, hasMore: false };
+
+  function alarmStateLabel(s) {
+    const translated = t(`alarmState.${s}`);
+    return translated === `alarmState.${s}` ? s : translated;
+  }
+
+  async function loadHistory(opts = {}) {
+    if (opts.resetOffset) historyState.offset = 0;
+    const tbody = $("#history-table tbody");
+    const params = new URLSearchParams({ limit: String(historyState.limit), offset: String(historyState.offset) });
+    const startRaw = $("#history-start").value;
+    const endRaw = $("#history-end").value;
+    const tagRaw = $("#history-tag").value;
+    const stateRaw = $("#history-state").value;
+    if (startRaw) params.set("start", new Date(startRaw).toISOString());
+    if (endRaw) params.set("end", new Date(endRaw).toISOString());
+    if (tagRaw) params.set("tag_name", tagRaw);
+    if (stateRaw) params.set("state", stateRaw);
+
+    try {
+      const data = await api(`/api/alarms/history?${params.toString()}`);
+      historyState.hasMore = data.has_more;
+      tbody.innerHTML = "";
+      for (const e of data.events) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${new Date(e.ts).toLocaleString()}</td><td class="state-${e.state}">${alarmStateLabel(e.state)}</td>
+          <td>${e.tag_name || e.tag_id}</td><td>${e.alarm_name || t("common.dash")}</td>
+          <td>${e.condition || t("common.dash")}</td><td>${e.priority ?? t("common.dash")}</td>
+          <td>${fmt(e.value)}</td><td>${e.message || ""}</td><td>${e.acked_by || t("common.dash")}</td>`;
+        tbody.appendChild(tr);
+      }
+      const from = data.events.length ? historyState.offset + 1 : 0;
+      const to = historyState.offset + data.events.length;
+      $("#history-page-label").textContent = `${from}–${to}`;
+      $("#history-prev-btn").disabled = historyState.offset === 0;
+      $("#history-next-btn").disabled = !historyState.hasMore;
+    } catch (e) {
+      tbody.innerHTML = "";
+      $("#history-page-label").textContent = t("common.couldNotLoadStatus");
+    }
+  }
+
+  $("#history-search-btn").addEventListener("click", () => loadHistory({ resetOffset: true }));
+  $("#history-reset-btn").addEventListener("click", () => {
+    $("#history-start").value = "";
+    $("#history-end").value = "";
+    $("#history-tag").value = "";
+    $("#history-state").value = "";
+    loadHistory({ resetOffset: true });
+  });
+  $("#history-prev-btn").addEventListener("click", () => {
+    if (historyState.offset === 0) return;
+    historyState.offset = Math.max(0, historyState.offset - historyState.limit);
+    loadHistory();
+  });
+  $("#history-next-btn").addEventListener("click", () => {
+    if (!historyState.hasMore) return;
+    historyState.offset += historyState.limit;
+    loadHistory();
+  });
 
   function fmtConnConfig(cfg) {
     if (!cfg) return t("common.dash");

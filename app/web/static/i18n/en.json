@@ -1,5 +1,7 @@
 {
-  "app": { "brandSub": "Historian" },
+  "app": {
+    "brandSub": "Historian"
+  },
   "login": {
     "subtitle": "Industrial Data Historian",
     "username": "username",
@@ -12,9 +14,12 @@
     "trend": "Trend",
     "alarms": "Alarms",
     "connections": "Endpoints",
-    "settings": "Settings"
+    "settings": "Settings",
+    "history": "History"
   },
-  "header": { "signOut": "Sign out" },
+  "header": {
+    "signOut": "Sign out"
+  },
   "live": {
     "tag": "Tag",
     "value": "Value",
@@ -50,6 +55,21 @@
     "active": "active",
     "cleared": "cleared",
     "acked": "acked"
+  },
+  "history": {
+    "from": "From",
+    "to": "To",
+    "tag": "Tag",
+    "allTags": "All tags",
+    "allStates": "All states",
+    "search": "Search",
+    "reset": "Reset",
+    "alarmName": "Alarm",
+    "condition": "Condition",
+    "priority": "Priority",
+    "ackedBy": "Acked by",
+    "prev": "Previous",
+    "next": "Next"
   },
   "connections": {
     "outboundTitle": "Outbound connections (polling PLCs / servers)",
@@ -110,19 +130,58 @@
       "Display": "Display"
     },
     "keys": {
-      "general.site_name": { "label": "Site name", "description": "Shown in the dashboard header and the embedded OPC UA server's name." },
-      "general.timezone": { "label": "Display timezone", "description": "IANA timezone name (e.g. America/Chicago) used to render timestamps in the dashboard. Storage is always UTC." },
-      "retention.days": { "label": "History retention (days)", "description": "0 = keep forever. Prunes tag_values older than this on a background schedule (works on SQLite and plain Postgres too, not just TimescaleDB's native policy)." },
-      "retention.default_deadband_percent": { "label": "Default deadband (% of engineering range)", "description": "Applied to tags that don't set their own deadband_percent. 0 disables deadband compression by default." },
-      "alarms.require_acknowledgment": { "label": "Require operator acknowledgment", "description": "ISA-18.2 style: when on, the dashboard flags active/cleared alarms as needing an explicit Ack until an operator acknowledges them." },
-      "security.access_token_expire_minutes": { "label": "Session token lifetime (minutes)", "description": "How long a login stays valid. Applies to tokens issued after this is changed; existing sessions keep their original expiry." },
-      "opcua_server.enabled": { "label": "Enable embedded OPC UA server", "description": "Host this instance's own OPC UA server so other SCADA/historian systems can connect to Ackiologs as a data source, instead of (or in addition to) Ackiologs connecting out to PLCs." },
-      "opcua_server.port": { "label": "Port", "description": "TCP port for the embedded OPC UA server endpoint (opc.tcp://host:port/ackiologs/server/)." },
-      "opcua_server.require_auth": { "label": "Require login", "description": "If on, OPC UA clients must authenticate with a valid Ackiologs username/password. If off, anonymous read access is allowed." },
-      "modbus_server.enabled": { "label": "Enable embedded Modbus TCP server", "description": "Host this instance as a Modbus TCP server so PLCs/SCADA/HMIs that only speak Modbus can read Ackiologs' live tag values, instead of (or in addition to) Ackiologs polling Modbus devices itself. Read-only by design: tags are exposed as input registers/discrete inputs, which the Modbus protocol has no write function code for." },
-      "modbus_server.port": { "label": "Port", "description": "TCP port for the embedded Modbus server. Defaults to 5020, not the standard 502, since binding 502 requires elevated/root privileges on Linux; set it to 502 explicitly if this instance runs with that privilege." },
-      "display.time_format": { "label": "Time format", "description": "How the dashboard renders clock times." },
-      "display.language": { "label": "Default language", "description": "The dashboard's language for users who haven't picked their own from the language selector." }
+      "general.site_name": {
+        "label": "Site name",
+        "description": "Shown in the dashboard header and the embedded OPC UA server's name."
+      },
+      "general.timezone": {
+        "label": "Display timezone",
+        "description": "IANA timezone name (e.g. America/Chicago) used to render timestamps in the dashboard. Storage is always UTC."
+      },
+      "retention.days": {
+        "label": "History retention (days)",
+        "description": "0 = keep forever. Prunes tag_values older than this on a background schedule (works on SQLite and plain Postgres too, not just TimescaleDB's native policy)."
+      },
+      "retention.default_deadband_percent": {
+        "label": "Default deadband (% of engineering range)",
+        "description": "Applied to tags that don't set their own deadband_percent. 0 disables deadband compression by default."
+      },
+      "alarms.require_acknowledgment": {
+        "label": "Require operator acknowledgment",
+        "description": "ISA-18.2 style: when on, the dashboard flags active/cleared alarms as needing an explicit Ack until an operator acknowledges them."
+      },
+      "security.access_token_expire_minutes": {
+        "label": "Session token lifetime (minutes)",
+        "description": "How long a login stays valid. Applies to tokens issued after this is changed; existing sessions keep their original expiry."
+      },
+      "opcua_server.enabled": {
+        "label": "Enable embedded OPC UA server",
+        "description": "Host this instance's own OPC UA server so other SCADA/historian systems can connect to Ackiologs as a data source, instead of (or in addition to) Ackiologs connecting out to PLCs."
+      },
+      "opcua_server.port": {
+        "label": "Port",
+        "description": "TCP port for the embedded OPC UA server endpoint (opc.tcp://host:port/ackiologs/server/)."
+      },
+      "opcua_server.require_auth": {
+        "label": "Require login",
+        "description": "If on, OPC UA clients must authenticate with a valid Ackiologs username/password. If off, anonymous read access is allowed."
+      },
+      "modbus_server.enabled": {
+        "label": "Enable embedded Modbus TCP server",
+        "description": "Host this instance as a Modbus TCP server so PLCs/SCADA/HMIs that only speak Modbus can read Ackiologs' live tag values, instead of (or in addition to) Ackiologs polling Modbus devices itself. Read-only by design: tags are exposed as input registers/discrete inputs, which the Modbus protocol has no write function code for."
+      },
+      "modbus_server.port": {
+        "label": "Port",
+        "description": "TCP port for the embedded Modbus server. Defaults to 5020, not the standard 502, since binding 502 requires elevated/root privileges on Linux; set it to 502 explicitly if this instance runs with that privilege."
+      },
+      "display.time_format": {
+        "label": "Time format",
+        "description": "How the dashboard renders clock times."
+      },
+      "display.language": {
+        "label": "Default language",
+        "description": "The dashboard's language for users who haven't picked their own from the language selector."
+      }
     }
   },
   "languages": {

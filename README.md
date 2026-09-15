@@ -57,6 +57,10 @@ a built-in dashboard.
 - **ISA-18.2 style alarm acknowledgment** — operators Ack an active/cleared
   alarm from the Alarms page; the ack is appended to the alarm & event journal
   rather than rewriting history.
+- **Alarm History page** — a dedicated, searchable view of the full alarm &
+  event journal, separate from the Alarms page's live feed: filter by time
+  range, tag, state, or alarm priority, with pagination for digging through
+  a large history (`GET /api/alarms/history`).
 - **Endpoints page** — one place to see every outbound connection (protocol,
   status, tag count) alongside both embedded servers' live status, endpoint,
   and (for Modbus) full register map.
