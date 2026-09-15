@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WiX v4 source for the Ackiologs Windows installer (MSI).
+  Built in CI (windows-latest) from the PyInstaller onedir output — see
+  .github/workflows/release.yml. To build locally:
+
+    dotnet tool install -g wix
+    wix extension add WixToolset.Util.wixext
+    wix build packaging\windows\ackiologs.wxs ^
+      -ext WixToolset.Util.wixext ^
+      -d SourceDir=dist\ackiologs ^
+      -d ConfigDir=config ^
+      -d Version=1.2.3 ^
+      -arch x64 -o ackiologs.msi
+
+  Layout installed:
+    %ProgramFiles%\Ackiologs\            <- ackiologs.exe + bundled runtime/static files
+    %LocalAppData%\Ackiologs\config\     <- default tags.yaml / connections.yaml (user-editable, no admin needed)
+    %LocalAppData%\Ackiologs\data\       <- SQLite database (created on first run)
+
+  ACKIOLOGS_TAGS_CONFIG_PATH / ACKIOLOGS_CONNECTIONS_CONFIG_PATH / ACKIOLOGS_DATABASE_URL
+  are set as user environment variables so the exe finds them regardless of where
+  Program Files puts the binaries.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <Package
+      Name="Ackiologs"
+      Manufacturer="Ackiologs"
+      Version="$(var.Version)"
+      UpgradeCode="6f2b6f7e-6e2f-4a0e-9a8a-6a8a7c5f9a2e"
+      Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Ackiologs is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <util:CloseApplication Id="CloseAckiologs" Target="ackiologs.exe" CloseMessage="yes" RebootPrompt="no" ElevatedCloseMessage="yes" />
+
+    <Icon Id="AckiologsIcon" SourceFile="$(var.SourceDir)\ackiologs.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AckiologsIcon" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/Installation-04/ackiologs" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Ackiologs" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="APPDATAFOLDER" Name="Ackiologs">
+        <Directory Id="APPDATACONFIGFOLDER" Name="config" />
+        <Directory Id="APPDATADATAFOLDER" Name="data" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AckiologsShortcutFolder" Name="Ackiologs" />
+    </StandardDirectory>
+
+    <!-- Program files: everything PyInstaller collected (ackiologs.exe + deps) -->
+    <ComponentGroup Id="ProgramFilesGroup" Directory="INSTALLFOLDER">
+      <Files Include="$(var.SourceDir)\**" />
+    </ComponentGroup>
+
+    <!-- Default config, copied into the user's LocalAppData so it's editable without admin rights -->
+    <Component Id="DefaultTagsConfig" Directory="APPDATACONFIGFOLDER" Guid="8a2d6a52-2f1a-4a58-9d61-9c1b6e4d1a01">
+      <File Id="TagsYaml" Source="$(var.ConfigDir)\tags.yaml" KeyPath="yes" />
+    </Component>
+    <Component Id="DefaultConnectionsConfig" Directory="APPDATACONFIGFOLDER" Guid="c3e5f0a1-8b3d-4e2a-8c7a-2d4b9e6f5a02">
+      <File Id="ConnectionsYaml" Source="$(var.ConfigDir)\connections.yaml" KeyPath="yes" />
+    </Component>
+
+    <!-- Ensure the (empty, at install time) data directory exists -->
+    <Component Id="DataDirPlaceholder" Directory="APPDATADATAFOLDER" Guid="1b7a4c9e-5f3a-4b6d-9a2e-7c8d1f0a3b03">
+      <CreateFolder />
+    </Component>
+
+    <!-- Point the exe at the per-user config/data location regardless of Program Files' location -->
+    <Component Id="EnvironmentVars" Directory="APPDATAFOLDER" Guid="e4f6a8b2-3c9d-4a1e-8b5f-0d2a6c9e4b04">
+        <Environment Id="EnvTagsPath" Name="ACKIOLOGS_TAGS_CONFIG_PATH" Value="[APPDATACONFIGFOLDER]tags.yaml" Action="set" Part="all" System="no" />
+        <Environment Id="EnvConnectionsPath" Name="ACKIOLOGS_CONNECTIONS_CONFIG_PATH" Value="[APPDATACONFIGFOLDER]connections.yaml" Action="set" Part="all" System="no" />
+        <Environment Id="EnvDatabaseUrl" Name="ACKIOLOGS_DATABASE_URL" Value="sqlite+aiosqlite:///[APPDATADATAFOLDER]ackiologs.db" Action="set" Part="all" System="no" />
+        <RegistryValue Root="HKCU" Key="Software\Ackiologs" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- Start Menu shortcut -->
+    <Component Id="StartMenuShortcut" Directory="AckiologsShortcutFolder" Guid="9d1e3f5a-7b2c-4d6e-8a9f-1e3c5b7d9a05">
+      <Shortcut Id="AckiologsStartMenuShortcut"
+                Name="Ackiologs Historian"
+                Description="Start the Ackiologs industrial historian"
+                Target="[INSTALLFOLDER]ackiologs.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="RemoveAckiologsShortcutFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\Ackiologs" Name="ShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Feature Id="MainFeature" Title="Ackiologs Historian" Level="1">
+      <ComponentGroupRef Id="ProgramFilesGroup" />
+      <ComponentRef Id="DefaultTagsConfig" />
+      <ComponentRef Id="DefaultConnectionsConfig" />
+      <ComponentRef Id="DataDirPlaceholder" />
+      <ComponentRef Id="EnvironmentVars" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+  </Package>
+</Wix>

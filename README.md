@@ -1,1 +1,193 @@
-# ackiologs
+# Ackiologs
+
+A protocol-agnostic industrial data historian. Collect time-series data from PLCs,
+SCADA systems and IIoT gateways over OPC UA, Modbus, and MQTT; store it in SQLite
+(zero-config) or TimescaleDB (production scale); trend it, alarm on it, and expose
+it over a REST/WebSocket API and a built-in dashboard.
+
+## Features
+
+- **Multi-protocol ingestion** — OPC UA (subscriptions), Modbus TCP/RTU (polling),
+  MQTT (plain or JSON-path/Sparkplug-style payloads), and a built-in Simulator for
+  demos and tests. The connector interface (`app/connectors/base.py`) is small —
+  adding BACnet/IP, DNP3, EtherNet/IP-CIP, or a vendor cloud API is one new class.
+- **Pluggable storage** — SQLite by default (nothing to install), or Postgres +
+  TimescaleDB for production (auto-creates the hypertable and, optionally, a
+  retention policy).
+- **Deadband compression** — per-tag or global percent-of-range deadband so noisy
+  signals don't flood storage.
+- **Alarming** — high/high-high/low/low-low/digital/bad-quality conditions defined
+  per tag in config, with a full alarm & event journal (activate/clear history).
+- **Live dashboard** — real-time value table over an authenticated WebSocket,
+  historical trend charts (raw or time-bucketed), alarm log, and connection
+  health — no build step, all JS assets vendored (nothing fetched from a CDN),
+  so it works on an air-gapped OT network.
+- **REST + WebSocket API** — tags, history (raw & aggregated), live streaming,
+  connection health, alarm events, and tag writes (setpoints) — see `/docs` for
+  interactive OpenAPI docs once running.
+- **JWT auth with roles** (admin/operator/viewer); disable for isolated demo/dev use.
+- **Config-as-code** — `config/connections.yaml` and `config/tags.yaml` fully
+  define what's collected; edit and `POST /api/config/reload`, or restart.
+- **Deploys in one command** — Docker Compose, SQLite by default, TimescaleDB as
+  a one-line overlay.
+
+## Downloads
+
+Every tagged release (`vX.Y.Z`) publishes four artifacts from the same commit —
+see [Releases](https://github.com/Installation-04/ackiologs/releases):
+
+| Platform | Artifact |
+|----------|----------|
+| Docker (any OS) | `ghcr.io/installation-04/ackiologs:X.Y.Z` (and `:latest`) |
+| Linux (x86_64) | `ackiologs-linux-x86_64-vX.Y.Z.tar.gz` — standalone binary, no Python required |
+| Windows (x86_64) | `ackiologs-windows-x86_64-vX.Y.Z.msi` — installer (Start Menu shortcut, per-user config/data) |
+| Windows (x86_64) | `ackiologs-windows-x86_64-vX.Y.Z.zip` — portable exe, no install needed |
+
+The Linux tarball and Windows zip both bundle a `config/` folder with the same
+example tags/connections as this repo — edit those files next to the binary,
+or point `ACKIOLOGS_TAGS_CONFIG_PATH`/`ACKIOLOGS_CONNECTIONS_CONFIG_PATH` (and
+`ACKIOLOGS_DATABASE_URL`) elsewhere. The MSI installs the program into
+`%ProgramFiles%\Ackiologs` and its editable config/data into
+`%LocalAppData%\Ackiologs`, wired together automatically via user environment
+variables — no admin rights needed to edit tags or connections after install.
+
+`GET /api/version` reports the running build's version on any of the four.
+
+### Guided Linux install (systemd or Docker)
+
+`scripts/install.sh` asks how you want to run it and sets it up for you —
+install method (systemd service or Docker Compose), database backend (SQLite
+or TimescaleDB, managed or external), network bind address/port, and history
+retention:
+
+```bash
+sudo ./scripts/install.sh
+# or, standalone:
+curl -fsSL https://raw.githubusercontent.com/Installation-04/ackiologs/main/scripts/install.sh | sudo bash
+```
+
+The systemd path installs the Linux binary to `/opt/ackiologs`, config to
+`/etc/ackiologs`, data to `/var/lib/ackiologs`, and a hardened
+`ackiologs.service` unit (runs as its own unprivileged `ackiologs` user).
+For scripted/non-interactive use, export the answers as env vars
+(`INSTALL_METHOD`, `DB_BACKEND`, `BIND_HOST`, `PORT`, `RETENTION_DAYS`, ...)
+and pass `--yes`.
+
+### Cutting a release
+
+Tag `main` and push it — the [release workflow](.github/workflows/release.yml)
+builds and publishes all four artifacts:
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+## Quickstart (Docker — recommended)
+
+```bash
+docker compose up -d
+```
+
+Open http://localhost:8000. The first boot creates a default `admin` user with a
+random password — check the container logs for it:
+
+```bash
+docker compose logs historian | grep "Created default admin"
+```
+
+It ships with the Simulator connection enabled, so you'll see live trending data
+immediately with no field equipment required.
+
+### With TimescaleDB (production-scale storage)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.timescale.yml up -d
+```
+
+This adds a TimescaleDB container and points the historian at it — `tag_values`
+is automatically converted into a hypertable on startup.
+
+## Quickstart (local, no Docker)
+
+```bash
+./scripts/quickstart.sh
+```
+
+Creates a venv, installs dependencies, and runs the app with SQLite at
+http://localhost:8000.
+
+## Configuring data collection
+
+Edit `config/connections.yaml` (where to connect) and `config/tags.yaml` (what to
+collect), then either restart or call:
+
+```bash
+curl -X POST http://localhost:8000/api/config/reload -H "Authorization: Bearer $TOKEN"
+```
+
+New connections need a restart; tag/alarm edits on existing connections apply on reload.
+
+### Tag address formats
+
+| Protocol  | `address` format                                  | Example                                  |
+|-----------|----------------------------------------------------|-------------------------------------------|
+| OPC UA    | UA NodeId string                                    | `ns=2;s=Pump3.Pressure`                  |
+| Modbus    | `<table>:<register>[:<encoding>]`                   | `holding:40001:float32`, `coil:5`        |
+| MQTT      | topic, or `json:<topic>:<dotted.key.path>`          | `json:plant/line1/telemetry:temperature` |
+| Simulator | unused; behavior set by the tag's `sim:` block      | `sine`, `random_walk`, `counter`, `bool_toggle` |
+
+Modbus tables: `holding`, `input`, `coil`, `discrete_input`. Register encodings
+(holding/input only): `int16` (default), `uint16`, `int32`, `uint32`, `float32`.
+
+## Adding a protocol
+
+Subclass `app.connectors.base.BaseConnector`, implement `async def run(self)` to
+connect and call `await self.emit(tag_name, value, quality=...)` for each sample,
+and register the class in `app/connectors/registry.py`. Nothing else in the
+system — storage, API, dashboard, alarms — needs to change.
+
+## API
+
+Interactive docs at `/docs` once running. Highlights:
+
+- `POST /api/auth/token` — login, returns a JWT.
+- `GET /api/tags` — all tags with current live value.
+- `GET /api/history/{tag}?start=...&end=...&interval_seconds=...` — raw samples
+  (`interval_seconds=0`) or time-bucketed avg/min/max/count.
+- `WS /ws/live` — live value stream, all tags.
+- `POST /api/tags/{tag}/write` — write a value back to the field device
+  (operator/admin role; supported protocols only).
+- `GET /api/connections` — connector health.
+- `GET /api/alarms/events` — alarm/event journal.
+
+## Architecture
+
+```
+connectors (OPC UA / Modbus / MQTT / Simulator / ...)
+        │  Sample(tag, value, ts, quality)
+        ▼
+   asyncio.Queue
+        │
+        ▼
+ ingest pipeline  ──► live bus (WebSocket, current-value cache)
+        │           ──► alarm evaluation (alarm & event journal)
+        ▼  (deadband-filtered, batched)
+   SQLite / TimescaleDB
+        ▲
+        │
+   REST / WebSocket API ──► dashboard (static HTML/JS)
+```
+
+## Configuration reference
+
+All settings are environment variables prefixed `ACKIOLOGS_` (see `app/config.py`
+and `.env.example`), including `DATABASE_URL`, `SECRET_KEY`, `AUTH_ENABLED`, and
+`RETENTION_DAYS`.
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest
+```

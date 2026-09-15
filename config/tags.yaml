@@ -1,0 +1,88 @@
+# Every historized point. `connection` must match a name in connections.yaml.
+# `address` format depends on protocol — see README "Tag address formats".
+
+tags:
+  # --- Simulator tags (run out of the box, no external equipment needed) -----
+  - name: Sim.Boiler.Temp
+    connection: sim1
+    address: "n/a"
+    data_type: float
+    engineering_units: degC
+    description: Simulated boiler outlet temperature
+    min_value: 0
+    max_value: 120
+    deadband_percent: 0.1
+    sim: { kind: sine, offset: 70, amplitude: 15, period_s: 180, noise: 0.5 }
+    alarms:
+      - condition: high
+        setpoint: 90
+        priority: 3
+        message: "Boiler temperature high"
+      - condition: high_high
+        setpoint: 105
+        priority: 1
+        message: "Boiler temperature HIGH-HIGH — shutdown imminent"
+
+  - name: Sim.Tank1.Level
+    connection: sim1
+    address: "n/a"
+    data_type: float
+    engineering_units: "%"
+    min_value: 0
+    max_value: 100
+    sim: { kind: random_walk, offset: 55, step: 0.8 }
+    alarms:
+      - condition: low
+        setpoint: 10
+        priority: 2
+        message: "Tank 1 level low"
+
+  - name: Sim.Line1.PartCount
+    connection: sim1
+    address: "n/a"
+    data_type: int
+    engineering_units: parts
+    sim: { kind: counter, increment: 1 }
+
+  - name: Sim.Pump1.Running
+    connection: sim1
+    address: "n/a"
+    data_type: bool
+    sim: { kind: bool_toggle, period_s: 45 }
+
+  # --- OPC UA example (enable the matching connection in connections.yaml) ---
+  # - name: Line1.Pump3.Pressure
+  #   connection: line1_opcua
+  #   address: "ns=2;s=Pump3.Pressure"
+  #   data_type: float
+  #   engineering_units: bar
+  #   min_value: 0
+  #   max_value: 10
+
+  # --- Modbus TCP example ------------------------------------------------------
+  # Address format "<table>:<register>[:<encoding>]"
+  #   table: holding | input | coil | discrete_input
+  #   encoding (holding/input only): int16 (default) | uint16 | int32 | uint32 | float32
+  # - name: VFD1.Speed
+  #   connection: vfd1_modbus
+  #   address: "holding:40001:float32"
+  #   data_type: float
+  #   engineering_units: rpm
+  # - name: VFD1.Running
+  #   connection: vfd1_modbus
+  #   address: "coil:5"
+  #   data_type: bool
+
+  # --- MQTT examples ------------------------------------------------------------
+  # Plain topic (payload is the raw value):
+  # - name: Edge.Gateway1.Status
+  #   connection: edge_mqtt
+  #   address: "plant/line1/gateway1/status"
+  #   data_type: string
+  #
+  # JSON payload, dotted-path extraction: "json:<topic>:<dotted.key.path>"
+  # - name: Edge.Gateway1.Temp
+  #   connection: edge_mqtt
+  #   address: "json:plant/line1/telemetry:sensors.temperature"
+  #   data_type: float
+  #   engineering_units: degC
