@@ -1,5 +1,7 @@
 {
-  "app": { "brandSub": "Historian" },
+  "app": {
+    "brandSub": "Historian"
+  },
   "login": {
     "subtitle": "Historien de Données Industrielles",
     "username": "utilisateur",
@@ -12,9 +14,12 @@
     "trend": "Tendance",
     "alarms": "Alarmes",
     "connections": "Connexions",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "history": "Historique"
   },
-  "header": { "signOut": "Déconnexion" },
+  "header": {
+    "signOut": "Déconnexion"
+  },
   "live": {
     "tag": "Tag",
     "value": "Valeur",
@@ -50,6 +55,21 @@
     "active": "active",
     "cleared": "résolue",
     "acked": "acquittée"
+  },
+  "history": {
+    "from": "De",
+    "to": "À",
+    "tag": "Tag",
+    "allTags": "Tous les tags",
+    "allStates": "Tous les états",
+    "search": "Rechercher",
+    "reset": "Réinitialiser",
+    "alarmName": "Alarme",
+    "condition": "Condition",
+    "priority": "Priorité",
+    "ackedBy": "Acquitté par",
+    "prev": "Précédent",
+    "next": "Suivant"
   },
   "connections": {
     "outboundTitle": "Connexions sortantes (interrogation d'automates / serveurs)",
@@ -110,19 +130,58 @@
       "Display": "Affichage"
     },
     "keys": {
-      "general.site_name": { "label": "Nom du site", "description": "Affiché dans l'en-tête du tableau de bord et dans le nom du serveur OPC UA intégré." },
-      "general.timezone": { "label": "Fuseau horaire d'affichage", "description": "Nom de fuseau horaire IANA (p. ex. Europe/Paris) utilisé pour afficher les horodatages dans le tableau de bord. Le stockage est toujours en UTC." },
-      "retention.days": { "label": "Rétention de l'historique (jours)", "description": "0 = conserver indéfiniment. Purge les tag_values plus anciens que cette valeur selon un cycle en arrière-plan (fonctionne sur SQLite et Postgres standard également, pas seulement la politique native de TimescaleDB)." },
-      "retention.default_deadband_percent": { "label": "Bande morte par défaut (% de la plage d'ingénierie)", "description": "Appliquée aux tags qui ne définissent pas leur propre deadband_percent. 0 désactive la compression par bande morte par défaut." },
-      "alarms.require_acknowledgment": { "label": "Exiger l'accusé de réception de l'opérateur", "description": "Style ISA-18.2 : lorsque activé, le tableau de bord signale les alarmes actives/résolues comme nécessitant un accusé de réception explicite jusqu'à ce qu'un opérateur les acquitte." },
-      "security.access_token_expire_minutes": { "label": "Durée de vie du jeton de session (minutes)", "description": "Durée de validité d'une connexion. S'applique aux jetons émis après ce changement ; les sessions existantes conservent leur expiration d'origine." },
-      "opcua_server.enabled": { "label": "Activer le serveur OPC UA intégré", "description": "Hébergez le propre serveur OPC UA de cette instance afin que d'autres systèmes SCADA/historian puissent se connecter à Ackiologs comme source de données, au lieu de (ou en plus de) laisser Ackiologs se connecter aux automates." },
-      "opcua_server.port": { "label": "Port", "description": "Port TCP pour le point de terminaison du serveur OPC UA intégré (opc.tcp://hôte:port/ackiologs/server/)." },
-      "opcua_server.require_auth": { "label": "Exiger une connexion", "description": "Si activé, les clients OPC UA doivent s'authentifier avec un nom d'utilisateur/mot de passe Ackiologs valide. Si désactivé, l'accès en lecture anonyme est autorisé." },
-      "modbus_server.enabled": { "label": "Activer le serveur Modbus TCP intégré", "description": "Hébergez cette instance en tant que serveur Modbus TCP afin que les automates/SCADA/IHM qui ne parlent que Modbus puissent lire les valeurs en direct des tags d'Ackiologs, au lieu de (ou en plus de) laisser Ackiologs interroger des appareils Modbus. Lecture seule par conception : les tags sont exposés sous forme de registres d'entrée/entrées logiques, pour lesquels le protocole Modbus n'a pas de code de fonction d'écriture." },
-      "modbus_server.port": { "label": "Port", "description": "Port TCP pour le serveur Modbus intégré. La valeur par défaut est 5020, et non le standard 502, car la liaison au port 502 nécessite des privilèges élevés/root sous Linux ; définissez-le explicitement sur 502 si cette instance s'exécute avec ce privilège." },
-      "display.time_format": { "label": "Format de l'heure", "description": "Comment le tableau de bord affiche les heures." },
-      "display.language": { "label": "Langue par défaut", "description": "La langue du tableau de bord pour les utilisateurs qui n'ont pas choisi la leur dans le sélecteur de langue." }
+      "general.site_name": {
+        "label": "Nom du site",
+        "description": "Affiché dans l'en-tête du tableau de bord et dans le nom du serveur OPC UA intégré."
+      },
+      "general.timezone": {
+        "label": "Fuseau horaire d'affichage",
+        "description": "Nom de fuseau horaire IANA (p. ex. Europe/Paris) utilisé pour afficher les horodatages dans le tableau de bord. Le stockage est toujours en UTC."
+      },
+      "retention.days": {
+        "label": "Rétention de l'historique (jours)",
+        "description": "0 = conserver indéfiniment. Purge les tag_values plus anciens que cette valeur selon un cycle en arrière-plan (fonctionne sur SQLite et Postgres standard également, pas seulement la politique native de TimescaleDB)."
+      },
+      "retention.default_deadband_percent": {
+        "label": "Bande morte par défaut (% de la plage d'ingénierie)",
+        "description": "Appliquée aux tags qui ne définissent pas leur propre deadband_percent. 0 désactive la compression par bande morte par défaut."
+      },
+      "alarms.require_acknowledgment": {
+        "label": "Exiger l'accusé de réception de l'opérateur",
+        "description": "Style ISA-18.2 : lorsque activé, le tableau de bord signale les alarmes actives/résolues comme nécessitant un accusé de réception explicite jusqu'à ce qu'un opérateur les acquitte."
+      },
+      "security.access_token_expire_minutes": {
+        "label": "Durée de vie du jeton de session (minutes)",
+        "description": "Durée de validité d'une connexion. S'applique aux jetons émis après ce changement ; les sessions existantes conservent leur expiration d'origine."
+      },
+      "opcua_server.enabled": {
+        "label": "Activer le serveur OPC UA intégré",
+        "description": "Hébergez le propre serveur OPC UA de cette instance afin que d'autres systèmes SCADA/historian puissent se connecter à Ackiologs comme source de données, au lieu de (ou en plus de) laisser Ackiologs se connecter aux automates."
+      },
+      "opcua_server.port": {
+        "label": "Port",
+        "description": "Port TCP pour le point de terminaison du serveur OPC UA intégré (opc.tcp://hôte:port/ackiologs/server/)."
+      },
+      "opcua_server.require_auth": {
+        "label": "Exiger une connexion",
+        "description": "Si activé, les clients OPC UA doivent s'authentifier avec un nom d'utilisateur/mot de passe Ackiologs valide. Si désactivé, l'accès en lecture anonyme est autorisé."
+      },
+      "modbus_server.enabled": {
+        "label": "Activer le serveur Modbus TCP intégré",
+        "description": "Hébergez cette instance en tant que serveur Modbus TCP afin que les automates/SCADA/IHM qui ne parlent que Modbus puissent lire les valeurs en direct des tags d'Ackiologs, au lieu de (ou en plus de) laisser Ackiologs interroger des appareils Modbus. Lecture seule par conception : les tags sont exposés sous forme de registres d'entrée/entrées logiques, pour lesquels le protocole Modbus n'a pas de code de fonction d'écriture."
+      },
+      "modbus_server.port": {
+        "label": "Port",
+        "description": "Port TCP pour le serveur Modbus intégré. La valeur par défaut est 5020, et non le standard 502, car la liaison au port 502 nécessite des privilèges élevés/root sous Linux ; définissez-le explicitement sur 502 si cette instance s'exécute avec ce privilège."
+      },
+      "display.time_format": {
+        "label": "Format de l'heure",
+        "description": "Comment le tableau de bord affiche les heures."
+      },
+      "display.language": {
+        "label": "Langue par défaut",
+        "description": "La langue du tableau de bord pour les utilisateurs qui n'ont pas choisi la leur dans le sélecteur de langue."
+      }
     }
   },
   "languages": {
