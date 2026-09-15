@@ -193,3 +193,50 @@ async def test_embedded_opcua_server_exposes_live_tag_values(client: AsyncClient
     res = await client.put("/api/settings", headers=headers, json={"values": {"opcua_server.enabled": False}})
     assert res.status_code == 200
     assert not embedded_opcua_server.running
+
+
+@pytest.mark.asyncio
+async def test_embedded_modbus_server_exposes_live_tag_values(client: AsyncClient):
+    """End-to-end: enable the embedded Modbus TCP server via the Settings API, then
+    connect a real pymodbus Client and read back a tag the simulator is producing."""
+    headers = await _make_admin_and_login(client, "modbus-tester")
+
+    res = await client.put(
+        "/api/settings",
+        headers=headers,
+        json={"values": {"modbus_server.enabled": True, "modbus_server.port": 15920}},
+    )
+    assert res.status_code == 200
+
+    from app.core.modbus_server import embedded_modbus_server
+
+    assert embedded_modbus_server.running
+    await asyncio.sleep(0.5)  # let a live sample or two flow through
+
+    status_res = await client.get("/api/settings/modbus-server/status", headers=headers)
+    assert status_res.status_code == 200
+    status_body = status_res.json()
+    assert status_body["running"] is True
+    assert "Sim.Boiler.Temp" in status_body["mapping"]
+
+    entry = status_body["mapping"]["Sim.Boiler.Temp"]
+    assert entry["table"] == "input_register"
+
+    import struct
+
+    from pymodbus.client import AsyncModbusTcpClient
+
+    modbus_client = AsyncModbusTcpClient("127.0.0.1", port=15920)
+    await modbus_client.connect()
+    try:
+        rr = await modbus_client.read_input_registers(address=entry["address"], count=2)
+        assert not rr.isError()
+        value = struct.unpack(">f", struct.pack(">HH", *rr.registers))[0]
+        assert value != 0.0  # the simulator produces a real, non-zero boiler temp
+    finally:
+        modbus_client.close()
+
+    # disabling via Settings actually stops the server
+    res = await client.put("/api/settings", headers=headers, json={"values": {"modbus_server.enabled": False}})
+    assert res.status_code == 200
+    assert not embedded_modbus_server.running

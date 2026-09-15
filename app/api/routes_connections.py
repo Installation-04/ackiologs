@@ -53,9 +53,12 @@ async def reload_config(
     await supervisor.load_and_sync()
     await pipeline.load_metadata()
 
+    from app.core.modbus_server import embedded_modbus_server
     from app.core.opcua_server import embedded_opcua_server
 
     if embedded_opcua_server.running:
         await embedded_opcua_server.restart()
+    if embedded_modbus_server.running:
+        await embedded_modbus_server.restart()
 
     return {"status": "reloaded", "tags": len(supervisor.config.tags), "connections": len(supervisor.config.connections)}
