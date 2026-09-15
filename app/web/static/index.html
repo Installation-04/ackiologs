@@ -33,6 +33,7 @@
         <button class="nav-btn active" data-view="live" data-i18n="nav.live">Live</button>
         <button class="nav-btn" data-view="trend" data-i18n="nav.trend">Trend</button>
         <button class="nav-btn" data-view="alarms" data-i18n="nav.alarms">Alarms</button>
+        <button class="nav-btn" data-view="history" data-i18n="nav.history">History</button>
         <button class="nav-btn" data-view="connections" data-i18n="nav.connections">Endpoints</button>
         <button class="nav-btn" data-view="settings" data-i18n="nav.settings">Settings</button>
       </nav>
@@ -100,6 +101,55 @@
           </thead>
           <tbody></tbody>
         </table>
+      </section>
+
+      <section id="view-history" class="view">
+        <div class="history-controls">
+          <label class="history-field">
+            <span data-i18n="history.from">From</span>
+            <input id="history-start" type="datetime-local" step="60" />
+          </label>
+          <label class="history-field">
+            <span data-i18n="history.to">To</span>
+            <input id="history-end" type="datetime-local" step="60" />
+          </label>
+          <label class="history-field">
+            <span data-i18n="history.tag">Tag</span>
+            <select id="history-tag"><option value="" data-i18n="history.allTags">All tags</option></select>
+          </label>
+          <label class="history-field">
+            <span data-i18n="alarms.state">State</span>
+            <select id="history-state">
+              <option value="" data-i18n="history.allStates">All states</option>
+              <option value="active" data-i18n="alarmState.active">active</option>
+              <option value="cleared" data-i18n="alarmState.cleared">cleared</option>
+              <option value="acked" data-i18n="alarmState.acked">acked</option>
+            </select>
+          </label>
+          <button id="history-search-btn" data-i18n="history.search">Search</button>
+          <button id="history-reset-btn" data-i18n="history.reset">Reset</button>
+        </div>
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th data-i18n="alarms.time">Time</th>
+              <th data-i18n="alarms.state">State</th>
+              <th data-i18n="alarms.tag">Tag</th>
+              <th data-i18n="history.alarmName">Alarm</th>
+              <th data-i18n="history.condition">Condition</th>
+              <th data-i18n="history.priority">Priority</th>
+              <th data-i18n="alarms.value">Value</th>
+              <th data-i18n="alarms.message">Message</th>
+              <th data-i18n="history.ackedBy">Acked by</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="history-pager">
+          <button id="history-prev-btn" data-i18n="history.prev">Previous</button>
+          <span id="history-page-label"></span>
+          <button id="history-next-btn" data-i18n="history.next">Next</button>
+        </div>
       </section>
 
       <section id="view-connections" class="view">
