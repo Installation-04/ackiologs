@@ -1,6 +1,6 @@
 [project]
 name = "ackiologs"
-version = "1.0.2"
+version = "1.0.3"
 description = "Ackiologs — a protocol-agnostic industrial data historian: collect, store, and trend plant data from OPC UA, Modbus, MQTT, EtherNet/IP, Siemens S7, BACnet/IP, SNMP, HTTP/REST and SQL, with SQLite or TimescaleDB storage."
 requires-python = ">=3.11"
 readme = "README.md"
