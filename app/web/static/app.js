@@ -121,18 +121,113 @@
     };
   }
 
-  async function loadTrend() {
-    const tag = $("#trend-tag").value;
-    if (!tag) return;
-    const rangeSec = Number($("#trend-range").value);
-    const end = new Date();
-    const start = new Date(end.getTime() - rangeSec * 1000);
+  // Crosshair cursor (FactoryTalk/PI-Vision-style): a vertical line that follows the
+  // mouse and a readout of the exact time/value at the nearest sample. Registered once
+  // globally; per-chart state lives on chart.$crosshair since the chart instance is
+  // recreated on every loadTrendData() call.
+  const crosshairPlugin = {
+    id: "ackiologsCrosshair",
+    afterInit(chart) {
+      chart.$crosshair = { x: null };
+    },
+    afterEvent(chart, args) {
+      const event = args.event;
+      if (event.type === "mousemove" || event.type === "mouseover") {
+        chart.$crosshair.x = event.x;
+        args.changed = true;
+      } else if (event.type === "mouseout") {
+        chart.$crosshair.x = null;
+        args.changed = true;
+        const readout = $("#trend-cursor-readout");
+        if (readout) readout.hidden = true;
+      }
+    },
+    afterDraw(chart) {
+      const x = chart.$crosshair && chart.$crosshair.x;
+      const readout = $("#trend-cursor-readout");
+      if (x == null) {
+        if (readout) readout.hidden = true;
+        return;
+      }
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea || x < chartArea.left || x > chartArea.right) {
+        if (readout) readout.hidden = true;
+        return;
+      }
+      const dataset = chart.data.datasets[0];
+      const labels = chart.data.labels;
+      if (!dataset || !labels || !labels.length) return;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, chartArea.top);
+      ctx.lineTo(x, chartArea.bottom);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(100,116,139,0.6)";
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.restore();
+
+      const targetTime = scales.x.getValueForPixel(x);
+      let nearestIdx = 0;
+      let minDiff = Infinity;
+      for (let i = 0; i < labels.length; i++) {
+        const t = labels[i].getTime();
+        const diff = Math.abs(t - targetTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          nearestIdx = i;
+        }
+      }
+      const value = dataset.data[nearestIdx];
+      const time = labels[nearestIdx];
+      if (value === null || value === undefined) {
+        if (readout) readout.hidden = true;
+        return;
+      }
+
+      const px = scales.x.getPixelForValue(time.getTime());
+      const py = scales.y.getPixelForValue(value);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fillStyle = dataset.borderColor || "#2563eb";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#fff";
+      ctx.stroke();
+      ctx.restore();
+
+      if (readout) {
+        readout.hidden = false;
+        readout.innerHTML =
+          `<div class="readout-time">${time.toLocaleString()}</div>` +
+          `<div class="readout-value">${fmt(value)}</div>`;
+        const wrapWidth = readout.parentElement.clientWidth;
+        const readoutWidth = readout.offsetWidth || 150;
+        let left = px + 12;
+        if (left + readoutWidth > wrapWidth) left = Math.max(8, px - readoutWidth - 12);
+        readout.style.left = `${left}px`;
+      }
+    },
+  };
+  let pluginsRegistered = false;
+  function ensurePluginsRegistered() {
+    if (pluginsRegistered) return;
+    if (window.ChartZoom) Chart.register(window.ChartZoom);
+    Chart.register(crosshairPlugin);
+    pluginsRegistered = true;
+  }
+
+  async function loadTrendData(tag, start, end) {
+    const rangeSec = (end.getTime() - start.getTime()) / 1000;
     const bucket = rangeSec > 7200 ? Math.max(10, Math.round(rangeSec / 500)) : 0;
     const url = `/api/history/${encodeURIComponent(tag)}?start=${start.toISOString()}&end=${end.toISOString()}&interval_seconds=${bucket}`;
     const data = await api(url);
     const labels = data.points.map((p) => new Date(p.ts));
     const values = data.points.map((p) => (data.mode === "bucketed" ? p.avg : p.value));
 
+    ensurePluginsRegistered();
     if (state.chart) state.chart.destroy();
     state.chart = new Chart($("#trend-chart"), {
       type: "line",
@@ -140,14 +235,52 @@
       options: {
         responsive: true,
         animation: false,
+        interaction: { intersect: false, mode: "nearest", axis: "x" },
         scales: { x: { type: "time", time: { tooltipFormat: "PP p" } } },
-        plugins: { legend: { display: true } },
+        plugins: {
+          legend: { display: true },
+          tooltip: { enabled: false }, // the crosshair readout replaces the built-in tooltip
+          zoom: {
+            pan: { enabled: true, mode: "x", modifierKey: "shift" },
+            zoom: {
+              wheel: { enabled: true },
+              drag: { enabled: true, backgroundColor: "rgba(37,99,235,0.15)" },
+              mode: "x",
+            },
+            limits: { x: { min: "original", max: "original" } },
+          },
+        },
       },
     });
   }
+
+  function loadTrend() {
+    const tag = $("#trend-tag").value;
+    if (!tag) return;
+    const rangeSec = Number($("#trend-range").value);
+    const end = new Date();
+    const start = new Date(end.getTime() - rangeSec * 1000);
+    return loadTrendData(tag, start, end);
+  }
+
+  function jumpToHour() {
+    const tag = $("#trend-tag").value;
+    const raw = $("#trend-jump-time").value;
+    if (!tag || !raw) return;
+    // datetime-local gives "YYYY-MM-DDTHH:mm" in the browser's local time zone.
+    const start = new Date(raw);
+    if (Number.isNaN(start.getTime())) return;
+    const end = new Date(start.getTime() + 3600 * 1000);
+    return loadTrendData(tag, start, end);
+  }
+
   $("#trend-refresh").addEventListener("click", loadTrend);
   $("#trend-tag").addEventListener("change", loadTrend);
   $("#trend-range").addEventListener("change", loadTrend);
+  $("#trend-jump-btn").addEventListener("click", jumpToHour);
+  $("#trend-zoom-reset").addEventListener("click", () => {
+    if (state.chart) state.chart.resetZoom();
+  });
 
   async function loadAlarms() {
     try {

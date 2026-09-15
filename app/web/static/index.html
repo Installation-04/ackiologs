@@ -9,6 +9,8 @@
        environment for an industrial historian. See app/web/static/vendor/. -->
   <script src="vendor/chart.umd.min.js"></script>
   <script src="vendor/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="vendor/hammer.min.js"></script>
+  <script src="vendor/chartjs-plugin-zoom.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -59,8 +61,19 @@
             <option value="604800">Last 7 days</option>
           </select>
           <button id="trend-refresh">Refresh</button>
+          <span class="trend-controls-sep"></span>
+          <label class="trend-jump-label">
+            Jump to
+            <input id="trend-jump-time" type="datetime-local" step="60" />
+          </label>
+          <button id="trend-jump-btn">Go</button>
+          <button id="trend-zoom-reset" title="Reset zoom/pan">Reset zoom</button>
         </div>
-        <canvas id="trend-chart" height="90"></canvas>
+        <div class="trend-hint">Drag to select a time range and zoom in · scroll to zoom · shift-drag to pan · move the mouse over the chart for exact values</div>
+        <div class="trend-chart-wrap">
+          <canvas id="trend-chart" height="90"></canvas>
+          <div id="trend-cursor-readout" class="trend-cursor-readout" hidden></div>
+        </div>
       </section>
 
       <section id="view-alarms" class="view">

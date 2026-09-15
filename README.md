@@ -1,16 +1,25 @@
 # Ackiologs
 
 A protocol-agnostic industrial data historian. Collect time-series data from PLCs,
-SCADA systems and IIoT gateways over OPC UA, Modbus, and MQTT; store it in SQLite
-(zero-config) or TimescaleDB (production scale); trend it, alarm on it, and expose
-it over a REST/WebSocket API and a built-in dashboard.
+building automation, network/power gear, SCADA systems, IIoT gateways, and
+anything with an HTTP API or database — over OPC UA, Modbus, MQTT, EtherNet/IP,
+Siemens S7, BACnet/IP, SNMP, HTTP/REST, or SQL; store it in SQLite (zero-config)
+or TimescaleDB (production scale); trend it (with a FactoryTalk/PI-style crosshair
+cursor and drag-to-zoom), alarm on it, and expose it over a REST/WebSocket API and
+a built-in dashboard.
 
 ## Features
 
-- **Multi-protocol ingestion** — OPC UA (subscriptions), Modbus TCP/RTU (polling),
-  MQTT (plain or JSON-path/Sparkplug-style payloads), and a built-in Simulator for
-  demos and tests. The connector interface (`app/connectors/base.py`) is small —
-  adding BACnet/IP, DNP3, EtherNet/IP-CIP, or a vendor cloud API is one new class.
+- **Ten protocols out of the box** — OPC UA (subscriptions), Modbus TCP/RTU
+  (polling), MQTT (plain or JSON-path/Sparkplug-style payloads), EtherNet/IP
+  (Allen-Bradley/Rockwell CIP, via `pycomm3`), Siemens S7 (S7-300/400/1200/1500,
+  via `python-snap7`), BACnet/IP (building automation, via `bacpypes3`), SNMP
+  (network/UPS/environmental gear), generic HTTP/REST polling (any JSON API —
+  the escape hatch for cloud SCADA and vendor APIs), generic SQL polling (any
+  external historian/MES/ERP database), and a built-in Simulator for demos and
+  tests. The connector interface (`app/connectors/base.py`) is small — adding
+  DNP3, Profinet, or another vendor API is one new class; see
+  [Adding a Protocol](#adding-a-protocol).
 - **Pluggable storage** — SQLite by default (nothing to install), or Postgres +
   TimescaleDB for production (auto-creates the hypertable and, optionally, a
   retention policy).
@@ -19,9 +28,12 @@ it over a REST/WebSocket API and a built-in dashboard.
 - **Alarming** — high/high-high/low/low-low/digital/bad-quality conditions defined
   per tag in config, with a full alarm & event journal (activate/clear history).
 - **Live dashboard** — real-time value table over an authenticated WebSocket,
-  historical trend charts (raw or time-bucketed), alarm log, and connection
-  health — no build step, all JS assets vendored (nothing fetched from a CDN),
-  so it works on an air-gapped OT network.
+  historical trend charts (raw or time-bucketed) with a FactoryTalk/PI-style
+  crosshair cursor (exact time + value under the mouse), drag-to-zoom into a
+  specific window and a "jump to hour" time picker to pinpoint an exact
+  window, alarm log, and connection health — no build step, all JS assets
+  vendored (nothing fetched from a CDN), so it works on an air-gapped OT
+  network.
 - **REST + WebSocket API** — tags, history (raw & aggregated), live streaming,
   connection health, alarm events, and tag writes (setpoints) — see `/docs` for
   interactive OpenAPI docs once running.
@@ -130,15 +142,24 @@ New connections need a restart; tag/alarm edits on existing connections apply on
 
 ### Tag address formats
 
-| Protocol  | `address` format                                  | Example                                  |
-|-----------|----------------------------------------------------|-------------------------------------------|
-| OPC UA    | UA NodeId string                                    | `ns=2;s=Pump3.Pressure`                  |
-| Modbus    | `<table>:<register>[:<encoding>]`                   | `holding:40001:float32`, `coil:5`        |
-| MQTT      | topic, or `json:<topic>:<dotted.key.path>`          | `json:plant/line1/telemetry:temperature` |
-| Simulator | unused; behavior set by the tag's `sim:` block      | `sine`, `random_walk`, `counter`, `bool_toggle` |
+| Protocol   | `address` format                                            | Example                                            |
+|------------|---------------------------------------------------------------|-----------------------------------------------------|
+| OPC UA     | UA NodeId string                                               | `ns=2;s=Pump3.Pressure`                            |
+| Modbus     | `<table>:<register>[:<encoding>]`                              | `holding:40001:float32`, `coil:5`                  |
+| MQTT       | topic, or `json:<topic>:<dotted.key.path>`                     | `json:plant/line1/telemetry:temperature`           |
+| EtherNet/IP| PLC symbolic tag name                                           | `Program:MainProgram.Line1.Speed`, `Recipe[3].Setpoint` |
+| Siemens S7 | snap7 PLC-address string                                       | `DB1.DBD4:REAL`, `DB1.DBX0.0:BOOL`, `M10.0:BOOL`   |
+| BACnet/IP  | `<device_address>:<object-type>:<instance>[:<property>]`       | `192.168.1.51:analog-input:3`                      |
+| SNMP       | numeric OID                                                     | `1.3.6.1.2.1.33.1.2.4.0`                           |
+| HTTP/REST  | path, or `json:<path>:<dotted.key.path>`                        | `json:/v1/sites/a/telemetry:readings.temperature`  |
+| SQL        | a read-only query (first column of first row is the value)     | `SELECT oee FROM line_metrics ORDER BY ts DESC LIMIT 1` |
+| Simulator  | unused; behavior set by the tag's `sim:` block                 | `sine`, `random_walk`, `counter`, `bool_toggle`    |
 
 Modbus tables: `holding`, `input`, `coil`, `discrete_input`. Register encodings
 (holding/input only): `int16` (default), `uint16`, `int32`, `uint32`, `float32`.
+Full worked examples for every protocol are in `config/connections.yaml` and
+`config/tags.yaml` (commented out except for the Simulator, which is enabled
+by default).
 
 ## Adding a protocol
 
