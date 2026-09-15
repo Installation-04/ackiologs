@@ -1,0 +1,136 @@
+{
+  "app": { "brandSub": "Historian" },
+  "login": {
+    "subtitle": "Historiador de Dados Industriais",
+    "username": "usuário",
+    "password": "senha",
+    "signIn": "Entrar",
+    "error": "Usuário ou senha inválidos."
+  },
+  "nav": {
+    "live": "Ao vivo",
+    "trend": "Tendência",
+    "alarms": "Alarmes",
+    "connections": "Conexões",
+    "settings": "Configurações"
+  },
+  "header": { "signOut": "Sair" },
+  "live": {
+    "tag": "Tag",
+    "value": "Valor",
+    "units": "Unidades",
+    "quality": "Qualidade",
+    "updated": "Atualizado",
+    "trendBtn": "Tendência"
+  },
+  "trend": {
+    "range15m": "Últimos 15 min",
+    "range1h": "Última hora",
+    "range6h": "Últimas 6 horas",
+    "range24h": "Últimas 24 horas",
+    "range7d": "Últimos 7 dias",
+    "refresh": "Atualizar",
+    "jumpTo": "Ir para",
+    "go": "Ir",
+    "resetZoom": "Redefinir zoom",
+    "resetZoomTitle": "Redefinir zoom/deslocamento",
+    "hint": "Arraste para selecionar um intervalo de tempo e ampliar · role para dar zoom · shift+arrastar para deslocar · mova o mouse sobre o gráfico para ver valores exatos"
+  },
+  "alarms": {
+    "time": "Hora",
+    "state": "Estado",
+    "tag": "Tag",
+    "value": "Valor",
+    "message": "Mensagem",
+    "ack": "Confirmar",
+    "ackBtn": "Confirmar",
+    "ackedBy": "por {name}"
+  },
+  "alarmState": {
+    "active": "ativo",
+    "cleared": "normalizado",
+    "acked": "confirmado"
+  },
+  "connections": {
+    "outboundTitle": "Conexões de saída (sondagem de CLPs / servidores)",
+    "connection": "Conexão",
+    "protocol": "Protocolo",
+    "status": "Status",
+    "tags": "Tags",
+    "address": "Endereço",
+    "connected": "conectado",
+    "disconnected": "desconectado"
+  },
+  "opcua": {
+    "title": "Servidor OPC UA incorporado (hospede seu próprio servidor de aquisição de dados)",
+    "running": "em execução",
+    "stopped": "parado",
+    "runningDetail": "em {endpoint} — {count} tag(s) exposta(s), {auth}",
+    "authRequired": "login necessário",
+    "anonAllowed": "acesso anônimo permitido",
+    "stoppedDetail": "ative-o na página de Configurações para permitir que outros sistemas SCADA/historian se conectem ao Ackiologs como uma fonte de dados OPC UA."
+  },
+  "modbus": {
+    "title": "Servidor Modbus TCP incorporado (exposição de tags somente leitura)",
+    "running": "em execução",
+    "stopped": "parado",
+    "runningDetail": "em {endpoint} — {count} tag(s) exposta(s) (apenas tags float/int/bool; somente leitura por design do protocolo)",
+    "stoppedDetail": "ative-o na página de Configurações para permitir que CLPs/SCADA/IHMs que falam apenas Modbus leiam os valores em tempo real do Ackiologs.",
+    "tag": "Tag",
+    "table": "Tabela",
+    "address": "Endereço",
+    "discreteInput": "Entrada discreta (FC02)",
+    "inputRegister": "Registrador de entrada (FC04)"
+  },
+  "settingsPage": {
+    "save": "Salvar alterações",
+    "noChanges": "Nenhuma alteração para salvar.",
+    "saved": "Salvo ({count} alterado(s)).",
+    "saveFailed": "Falha ao salvar: {msg}",
+    "couldNotLoad": "Não foi possível carregar as configurações."
+  },
+  "common": {
+    "loading": "Carregando...",
+    "couldNotLoadStatus": "Não foi possível carregar o status.",
+    "dash": "-"
+  },
+  "quality": {
+    "good": "boa",
+    "bad": "ruim",
+    "uncertain": "incerta"
+  },
+  "settingsSchema": {
+    "categories": {
+      "General": "Geral",
+      "Data Retention & Compression": "Retenção e Compressão de Dados",
+      "Alarms": "Alarmes",
+      "Security": "Segurança",
+      "Embedded OPC UA Server": "Servidor OPC UA Incorporado",
+      "Embedded Modbus Server": "Servidor Modbus Incorporado",
+      "Display": "Exibição"
+    },
+    "keys": {
+      "general.site_name": { "label": "Nome do site", "description": "Exibido no cabeçalho do painel e no nome do servidor OPC UA incorporado." },
+      "general.timezone": { "label": "Fuso horário de exibição", "description": "Nome de fuso horário IANA (ex.: America/Sao_Paulo) usado para exibir os carimbos de data/hora no painel. O armazenamento é sempre em UTC." },
+      "retention.days": { "label": "Retenção de histórico (dias)", "description": "0 = manter para sempre. Remove tag_values mais antigos do que isso em um ciclo em segundo plano (funciona no SQLite e no Postgres padrão também, não apenas na política nativa do TimescaleDB)." },
+      "retention.default_deadband_percent": { "label": "Banda morta padrão (% da faixa de engenharia)", "description": "Aplicada a tags que não definem seu próprio deadband_percent. 0 desativa a compressão por banda morta por padrão." },
+      "alarms.require_acknowledgment": { "label": "Exigir confirmação do operador", "description": "Estilo ISA-18.2: quando ativado, o painel sinaliza alarmes ativos/normalizados como pendentes de confirmação explícita até que um operador os confirme." },
+      "security.access_token_expire_minutes": { "label": "Duração do token de sessão (minutos)", "description": "Por quanto tempo um login permanece válido. Aplica-se a tokens emitidos após essa alteração; as sessões existentes mantêm sua expiração original." },
+      "opcua_server.enabled": { "label": "Habilitar servidor OPC UA incorporado", "description": "Hospede o próprio servidor OPC UA desta instância para que outros sistemas SCADA/historian possam se conectar ao Ackiologs como fonte de dados, em vez de (ou além de) o Ackiologs se conectar a CLPs." },
+      "opcua_server.port": { "label": "Porta", "description": "Porta TCP para o endpoint do servidor OPC UA incorporado (opc.tcp://host:porta/ackiologs/server/)." },
+      "opcua_server.require_auth": { "label": "Exigir login", "description": "Se ativado, os clientes OPC UA devem se autenticar com um usuário/senha válido do Ackiologs. Se desativado, o acesso de leitura anônimo é permitido." },
+      "modbus_server.enabled": { "label": "Habilitar servidor Modbus TCP incorporado", "description": "Hospede esta instância como um servidor Modbus TCP para que CLPs/SCADA/IHMs que falam apenas Modbus possam ler os valores em tempo real das tags do Ackiologs, em vez de (ou além de) o Ackiologs sondear dispositivos Modbus. Somente leitura por design: as tags são expostas como registradores de entrada/entradas discretas, para as quais o protocolo Modbus não tem código de função de escrita." },
+      "modbus_server.port": { "label": "Porta", "description": "Porta TCP para o servidor Modbus incorporado. O padrão é 5020, não o padrão 502, já que vincular a porta 502 requer privilégios elevados/root no Linux; defina-a explicitamente como 502 se esta instância for executada com esse privilégio." },
+      "display.time_format": { "label": "Formato de hora", "description": "Como o painel exibe os horários." },
+      "display.language": { "label": "Idioma padrão", "description": "O idioma do painel para usuários que não escolheram o próprio no seletor de idioma." }
+    }
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "de": "Deutsch",
+    "pt": "Português",
+    "zh": "中文"
+  }
+}

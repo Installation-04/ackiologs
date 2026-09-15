@@ -1,4 +1,6 @@
 (() => {
+  const { t, tSetting, tCategory, applyStaticTranslations, SUPPORTED_LOCALES, detectBrowserLocale, getStoredLocale, setStoredLocale, loadLocale } = window.AckiologsI18n;
+
   const state = { token: localStorage.getItem("ackiologs_token") || null, ws: null, chart: null, tags: [] };
 
   const $ = (sel) => document.querySelector(sel);
@@ -14,7 +16,44 @@
     return res.json();
   };
 
-  function showApp() {
+  // --- Language selector ---
+  function populateLangSelect(select) {
+    select.innerHTML = "";
+    for (const loc of SUPPORTED_LOCALES) {
+      const opt = document.createElement("option");
+      opt.value = loc;
+      opt.textContent = t(`languages.${loc}`);
+      select.appendChild(opt);
+    }
+  }
+
+  async function switchLocale(loc, persist) {
+    await loadLocale(loc);
+    if (persist) setStoredLocale(loc);
+    applyStaticTranslations();
+    $("#login-lang-select").value = loc;
+    $("#lang-select").value = loc;
+    // re-render every currently-loaded dynamic view so translated text refreshes too
+    if (!$("#app-screen").hidden) {
+      loadTags();
+      loadAlarms();
+      loadConnections();
+      loadOpcuaServerStatus();
+      loadModbusServerStatus();
+      if (document.querySelector('.nav-btn[data-view="settings"]').classList.contains("active")) loadSettings();
+    }
+  }
+
+  function wireLangSelectors() {
+    populateLangSelect($("#login-lang-select"));
+    populateLangSelect($("#lang-select"));
+    $("#login-lang-select").value = window.AckiologsI18n.locale;
+    $("#lang-select").value = window.AckiologsI18n.locale;
+    $("#login-lang-select").addEventListener("change", (e) => switchLocale(e.target.value, true));
+    $("#lang-select").addEventListener("change", (e) => switchLocale(e.target.value, true));
+  }
+
+  async function showApp() {
     $("#login-screen").hidden = true;
     $("#app-screen").hidden = false;
     connectWs();
@@ -27,6 +66,19 @@
     setInterval(loadConnections, 15000);
     setInterval(loadOpcuaServerStatus, 15000);
     setInterval(loadModbusServerStatus, 15000);
+
+    // if the user hasn't picked their own language, adopt the site's default once logged in
+    if (!getStoredLocale()) {
+      try {
+        const settings = await api("/api/settings");
+        const siteLang = settings.find((s) => s.key === "display.language");
+        if (siteLang && siteLang.value && siteLang.value !== window.AckiologsI18n.locale) {
+          await switchLocale(siteLang.value, false);
+        }
+      } catch (e) {
+        /* not fatal — keep the browser-detected language */
+      }
+    }
   }
 
   function logout() {
@@ -50,7 +102,7 @@
       $("#login-error").hidden = true;
       showApp();
     } catch (e) {
-      $("#login-error").textContent = "Invalid username or password.";
+      $("#login-error").textContent = t("login.error");
       $("#login-error").hidden = false;
     }
   });
@@ -77,21 +129,23 @@
     tbody.innerHTML = "";
     liveRows.clear();
     const trendSelect = $("#trend-tag");
+    const prevTrendTag = trendSelect.value;
     trendSelect.innerHTML = "";
-    for (const t of tags) {
+    for (const tag of tags) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${t.name}</td><td class="v">${fmt(t.live_value)}</td><td>${t.engineering_units || ""}</td>
-        <td class="q quality-${t.live_quality || "uncertain"}">${t.live_quality || "-"}</td>
-        <td class="ts">${t.live_ts ? new Date(t.live_ts).toLocaleTimeString() : "-"}</td>
-        <td><button class="small-link" data-tag="${t.name}">Trend</button></td>`;
+      tr.innerHTML = `<td>${tag.name}</td><td class="v">${fmt(tag.live_value)}</td><td>${tag.engineering_units || ""}</td>
+        <td class="q quality-${tag.live_quality || "uncertain"}">${qualityLabel(tag.live_quality)}</td>
+        <td class="ts">${tag.live_ts ? new Date(tag.live_ts).toLocaleTimeString() : t("common.dash")}</td>
+        <td><button class="small-link" data-tag="${tag.name}">${t("live.trendBtn")}</button></td>`;
       tbody.appendChild(tr);
-      liveRows.set(t.name, tr);
+      liveRows.set(tag.name, tr);
 
       const opt = document.createElement("option");
-      opt.value = t.name;
-      opt.textContent = t.name;
+      opt.value = tag.name;
+      opt.textContent = tag.name;
       trendSelect.appendChild(opt);
     }
+    if (prevTrendTag && tags.some((tag) => tag.name === prevTrendTag)) trendSelect.value = prevTrendTag;
     tbody.querySelectorAll("button[data-tag]").forEach((b) =>
       b.addEventListener("click", () => {
         $("#trend-tag").value = b.dataset.tag;
@@ -101,9 +155,14 @@
   }
 
   function fmt(v) {
-    if (v === null || v === undefined) return "-";
+    if (v === null || v === undefined) return t("common.dash");
     if (typeof v === "number") return Number.isInteger(v) ? v : v.toFixed(3);
     return String(v);
+  }
+
+  function qualityLabel(q) {
+    if (!q) return t("quality.uncertain");
+    return t(`quality.${q}`) === `quality.${q}` ? q : t(`quality.${q}`);
   }
 
   function connectWs() {
@@ -121,7 +180,7 @@
       const row = liveRows.get(msg.tag);
       if (!row) return;
       row.querySelector(".v").textContent = fmt(msg.value);
-      row.querySelector(".q").textContent = msg.quality;
+      row.querySelector(".q").textContent = qualityLabel(msg.quality);
       row.querySelector(".q").className = `q quality-${msg.quality}`;
       row.querySelector(".ts").textContent = new Date(msg.ts).toLocaleTimeString();
     };
@@ -178,8 +237,8 @@
       let nearestIdx = 0;
       let minDiff = Infinity;
       for (let i = 0; i < labels.length; i++) {
-        const t = labels[i].getTime();
-        const diff = Math.abs(t - targetTime);
+        const labelTime = labels[i].getTime();
+        const diff = Math.abs(labelTime - targetTime);
         if (diff < minDiff) {
           minDiff = diff;
           nearestIdx = i;
@@ -295,8 +354,9 @@
       tbody.innerHTML = "";
       for (const e of events) {
         const tr = document.createElement("tr");
-        const needsAck = e.state !== "acked" ? `<button class="small-link" data-ack="${e.alarm_id}">Ack</button>` : (e.acked_by ? `by ${e.acked_by}` : "");
-        tr.innerHTML = `<td>${new Date(e.ts).toLocaleString()}</td><td class="state-${e.state}">${e.state}</td>
+        const needsAck = e.state !== "acked" ? `<button class="small-link" data-ack="${e.alarm_id}">${t("alarms.ackBtn")}</button>` : (e.acked_by ? t("alarms.ackedBy", { name: e.acked_by }) : "");
+        const stateLabel = t(`alarmState.${e.state}`) === `alarmState.${e.state}` ? e.state : t(`alarmState.${e.state}`);
+        tr.innerHTML = `<td>${new Date(e.ts).toLocaleString()}</td><td class="state-${e.state}">${stateLabel}</td>
           <td>${e.tag_name || e.tag_id}</td><td>${fmt(e.value)}</td><td>${e.message || ""}</td><td>${needsAck}</td>`;
         tbody.appendChild(tr);
       }
@@ -312,12 +372,12 @@
   }
 
   function fmtConnConfig(cfg) {
-    if (!cfg) return "-";
+    if (!cfg) return t("common.dash");
     const parts = [];
     for (const key of ["host", "url", "endpoint_url", "broker", "port"]) {
       if (cfg[key] !== undefined) parts.push(`${key}=${cfg[key]}`);
     }
-    return parts.length ? parts.join(", ") : "-";
+    return parts.length ? parts.join(", ") : t("common.dash");
   }
 
   async function loadConnections() {
@@ -328,7 +388,7 @@
       for (const c of conns) {
         const tr = document.createElement("tr");
         tr.innerHTML = `<td>${c.name}</td><td>${c.protocol}</td>
-          <td class="quality-${c.connected ? "good" : "bad"}">${c.connected ? "connected" : "disconnected"}</td>
+          <td class="quality-${c.connected ? "good" : "bad"}">${c.connected ? t("connections.connected") : t("connections.disconnected")}</td>
           <td>${c.tag_count}</td><td>${fmtConnConfig(c.config)}</td>`;
         tbody.appendChild(tr);
       }
@@ -340,10 +400,10 @@
     try {
       const s = await api("/api/settings/opcua-server/status");
       el.innerHTML = s.running
-        ? `<span class="quality-good">● running</span> at <code>${s.endpoint}</code> — ${s.tag_count} tag(s) exposed, ${s.require_auth ? "login required" : "anonymous access allowed"}`
-        : `<span class="quality-bad">● stopped</span> — enable it on the Settings page to let other SCADA/historian systems connect to Ackiologs as an OPC UA data source.`;
+        ? `<span class="quality-good">● ${t("opcua.running")}</span> ${t("opcua.runningDetail", { endpoint: `<code>${s.endpoint}</code>`, count: s.tag_count, auth: s.require_auth ? t("opcua.authRequired") : t("opcua.anonAllowed") })}`
+        : `<span class="quality-bad">● ${t("opcua.stopped")}</span> — ${t("opcua.stoppedDetail")}`;
     } catch (e) {
-      el.textContent = "Could not load status.";
+      el.textContent = t("common.couldNotLoadStatus");
     }
   }
 
@@ -353,12 +413,12 @@
     try {
       const s = await api("/api/settings/modbus-server/status");
       el.innerHTML = s.running
-        ? `<span class="quality-good">● running</span> at <code>${s.endpoint}</code> — ${s.tag_count} tag(s) exposed (float/int/bool tags only; read-only by protocol design)`
-        : `<span class="quality-bad">● stopped</span> — enable it on the Settings page to let Modbus-only PLCs/SCADA/HMIs read Ackiologs' live tag values.`;
+        ? `<span class="quality-good">● ${t("modbus.running")}</span> ${t("modbus.runningDetail", { endpoint: `<code>${s.endpoint}</code>`, count: s.tag_count })}`
+        : `<span class="quality-bad">● ${t("modbus.stopped")}</span> — ${t("modbus.stoppedDetail")}`;
       if (s.running && s.mapping && Object.keys(s.mapping).length) {
-        let html = `<table id="modbus-mapping-table"><thead><tr><th>Tag</th><th>Table</th><th>Address</th></tr></thead><tbody>`;
+        let html = `<table id="modbus-mapping-table"><thead><tr><th>${t("modbus.tag")}</th><th>${t("modbus.table")}</th><th>${t("modbus.address")}</th></tr></thead><tbody>`;
         for (const [tag, entry] of Object.entries(s.mapping)) {
-          const tableLabel = entry.table === "discrete_input" ? "Discrete Input (FC02)" : "Input Register (FC04)";
+          const tableLabel = entry.table === "discrete_input" ? t("modbus.discreteInput") : t("modbus.inputRegister");
           html += `<tr><td>${tag}</td><td>${tableLabel}</td><td>${entry.address}${entry.table === "input_register" ? "-" + (entry.address + 1) : ""}</td></tr>`;
         }
         html += `</tbody></table>`;
@@ -367,7 +427,7 @@
         mappingEl.innerHTML = "";
       }
     } catch (e) {
-      el.textContent = "Could not load status.";
+      el.textContent = t("common.couldNotLoadStatus");
     }
   }
 
@@ -403,12 +463,14 @@
       }
       let html = "";
       for (const [category, items] of Object.entries(byCategory)) {
-        html += `<fieldset class="settings-group"><legend>${category}</legend>`;
+        html += `<fieldset class="settings-group"><legend>${tCategory(category)}</legend>`;
         for (const s of items) {
+          const label = tSetting(s.key, "label") || s.label;
+          const desc = tSetting(s.key, "description") || s.description || "";
           html += `<div class="settings-row">
-            <label for="setting-${s.key}">${s.label}</label>
+            <label for="setting-${s.key}">${label}</label>
             ${settingInputHtml(s)}
-            <p class="settings-desc">${s.description || ""}</p>
+            <p class="settings-desc">${desc}</p>
           </div>`;
         }
         html += `</fieldset>`;
@@ -427,28 +489,34 @@
         });
       });
     } catch (e) {
-      container.textContent = "Could not load settings.";
+      container.textContent = t("settingsPage.couldNotLoad");
     }
   }
 
   $("#settings-save-btn").addEventListener("click", async () => {
     const msg = $("#settings-save-msg");
     if (Object.keys(pendingSettingChanges).length === 0) {
-      msg.textContent = "No changes to save.";
+      msg.textContent = t("settingsPage.noChanges");
       msg.hidden = false;
       return;
     }
     try {
       const res = await api("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ values: pendingSettingChanges }) });
-      msg.textContent = `Saved (${res.changed.length} changed).`;
+      msg.textContent = t("settingsPage.saved", { count: res.changed.length });
       msg.hidden = false;
       for (const k of Object.keys(pendingSettingChanges)) delete pendingSettingChanges[k];
       loadSettings();
     } catch (e) {
-      msg.textContent = "Save failed: " + e.message;
+      msg.textContent = t("settingsPage.saveFailed", { msg: e.message });
       msg.hidden = false;
     }
   });
 
-  if (state.token) showApp();
+  (async () => {
+    const initialLocale = getStoredLocale() || detectBrowserLocale();
+    await loadLocale(initialLocale);
+    applyStaticTranslations();
+    wireLangSelectors();
+    if (state.token) showApp();
+  })();
 })();

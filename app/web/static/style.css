@@ -55,7 +55,8 @@ img { max-width: 100%; }
   width: 100%;
   max-width: 340px;
 }
-.login-card h1 { margin: 0 0 2px; font-size: 22px; }
+.login-lang-select { float: right; margin-bottom: 4px; }
+.login-card h1 { margin: 0 0 2px; font-size: 22px; clear: both; }
 .login-card .sub { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
 .login-card input {
   width: 100%;
@@ -102,6 +103,7 @@ nav { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
 }
 .nav-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 .header-right { display: flex; align-items: center; gap: 10px; }
+.lang-select { padding: 6px 8px; font-size: 13px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); display: inline-block; }
 .dot.on { background: var(--good); }
 
