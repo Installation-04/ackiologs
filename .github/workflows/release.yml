@@ -8,6 +8,15 @@ on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
+  # A tag pushed by another workflow's GITHUB_TOKEN (auto-tag.yml) doesn't trigger
+  # the `push: tags:` rule above — GitHub blocks a token-authored push from
+  # cascading into other workflow runs, to prevent recursive chains. auto-tag.yml
+  # works around that by explicitly dispatching this workflow via the API instead
+  # (`gh workflow run release.yml --ref vX.Y.Z`); GITHUB_REF_NAME then resolves to
+  # that tag the same way it would for a real `push: tags:` event, so `version`
+  # below needs no special-casing. Also dispatchable by hand from the Actions tab
+  # to rebuild/re-publish an existing tag's artifacts without re-tagging.
+  workflow_dispatch:
 
 permissions:
   contents: write
