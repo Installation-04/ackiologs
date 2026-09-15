@@ -54,6 +54,8 @@ async def update_settings(
 
     if any(key.startswith("opcua_server.") for key in changed):
         await _apply_opcua_server_state()
+    if any(key.startswith("modbus_server.") for key in changed):
+        await _apply_modbus_server_state()
 
     return {"status": "ok", "changed": changed}
 
@@ -66,6 +68,16 @@ async def _apply_opcua_server_state() -> None:
         await embedded_opcua_server.restart()
     else:
         await embedded_opcua_server.stop()
+
+
+async def _apply_modbus_server_state() -> None:
+    from app.core.modbus_server import embedded_modbus_server
+
+    should_run = runtime_settings.get("modbus_server.enabled")
+    if should_run:
+        await embedded_modbus_server.restart()
+    else:
+        await embedded_modbus_server.stop()
 
 
 @router.get("/opcua-server/status")
@@ -84,4 +96,22 @@ async def opcua_server_status(
         "endpoint": f"opc.tcp://0.0.0.0:{port}/ackiologs/server/",
         "tag_count": embedded_opcua_server.tag_count,
         "require_auth": runtime_settings.get("opcua_server.require_auth"),
+    }
+
+
+@router.get("/modbus-server/status")
+async def modbus_server_status(
+    _user: Annotated[CurrentUser, Depends(get_current_user)],
+):
+    """Live status of the embedded Modbus TCP server, plus its register map — a
+    Modbus master needs the exact address of each tag to poll it, and there's no
+    way to discover that over the protocol itself (no browsing, unlike OPC UA)."""
+    from app.core.modbus_server import embedded_modbus_server
+
+    port = runtime_settings.get("modbus_server.port")
+    return {
+        "running": embedded_modbus_server.running,
+        "endpoint": f"0.0.0.0:{port}",
+        "tag_count": embedded_modbus_server.tag_count,
+        "mapping": embedded_modbus_server.mapping,
     }
