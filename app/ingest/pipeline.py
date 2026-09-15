@@ -15,6 +15,7 @@ from sqlalchemy import select
 
 from app.config import get_settings
 from app.connectors.base import Sample
+from app.core.runtime_settings import runtime_settings
 from app.db.base import session_scope
 from app.db.models import AlarmCondition, AlarmDefinition, AlarmEvent, AlarmState, DataType, Quality, Tag, TagValue
 from app.ingest.live import LiveValue, live_bus
@@ -127,7 +128,11 @@ class IngestPipeline:
     def _within_deadband(self, tag_name: str, meta: TagMeta, value_float: float | None) -> bool:
         if value_float is None or meta.min_value is None or meta.max_value is None:
             return False
-        deadband_pct = meta.deadband_percent if meta.deadband_percent is not None else self.settings.default_deadband_percent
+        deadband_pct = (
+            meta.deadband_percent
+            if meta.deadband_percent is not None
+            else runtime_settings.get("retention.default_deadband_percent")
+        )
         if not deadband_pct:
             return False
         last = self._last_value.get(tag_name)

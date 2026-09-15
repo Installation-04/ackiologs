@@ -21,8 +21,9 @@ a built-in dashboard.
   DNP3, Profinet, or another vendor API is one new class; see
   [Adding a Protocol](#adding-a-protocol).
 - **Pluggable storage** — SQLite by default (nothing to install), or Postgres +
-  TimescaleDB for production (auto-creates the hypertable and, optionally, a
-  retention policy).
+  TimescaleDB for production (auto-creates the hypertable). History retention
+  is a live Settings-page value, not a fixed policy: one background pruner
+  enforces it the same way on every backend.
 - **Deadband compression** — per-tag or global percent-of-range deadband so noisy
   signals don't flood storage.
 - **Alarming** — high/high-high/low/low-low/digital/bad-quality conditions defined
@@ -38,6 +39,22 @@ a built-in dashboard.
   connection health, alarm events, and tag writes (setpoints) — see `/docs` for
   interactive OpenAPI docs once running.
 - **JWT auth with roles** (admin/operator/viewer); disable for isolated demo/dev use.
+- **Host your own OPC UA server** — the reverse of the OPC UA client connector:
+  flip on "Embedded OPC UA Server" in Settings and Ackiologs itself becomes a
+  data acquisition server other SCADA/historian/MES systems can connect *into*
+  (every known tag exposed live under `Objects/Tags`), instead of only ever
+  polling field devices.
+- **Live-editable Settings page** — industry-standard, dashboard-editable
+  settings (site identity, history retention, default deadband, alarm
+  acknowledgment requirement, session lifetime, the embedded OPC UA server's
+  port/auth, display preferences) that take effect immediately, no restart —
+  see `app/core/settings_registry.py` for the full, always-accurate list.
+- **ISA-18.2 style alarm acknowledgment** — operators Ack an active/cleared
+  alarm from the Alarms page; the ack is appended to the alarm & event journal
+  rather than rewriting history.
+- **Endpoints page** — one place to see every outbound connection (protocol,
+  status, tag count) alongside the embedded OPC UA server's own live status
+  and endpoint URL.
 - **Config-as-code** — `config/connections.yaml` and `config/tags.yaml` fully
   define what's collected; edit and `POST /api/config/reload`, or restart.
 - **Deploys in one command** — Docker Compose, SQLite by default, TimescaleDB as

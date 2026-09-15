@@ -144,3 +144,16 @@ class ConnectionStatusLog(Base):
     ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     status: Mapped[str] = mapped_column(String(32))
     detail: Mapped[str | None] = mapped_column(String(500), default=None)
+
+
+class AppSetting(Base):
+    """Runtime-editable settings (Settings page) — distinct from app/config.py's
+    Settings, which are process-startup env vars. Values are stored as text and
+    typed/validated by app/core/settings_registry.py; this table only ever holds
+    settings that a live, running process can actually apply without a restart."""
+
+    __tablename__ = "app_settings"
+
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
