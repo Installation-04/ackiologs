@@ -16,6 +16,7 @@ from app.api.routes_tags import router as tags_router
 from app._version import __version__
 from app.config import get_settings
 from app.connectors.base import Sample
+from app.core.modbus_server import embedded_modbus_server
 from app.core.opcua_server import embedded_opcua_server
 from app.core.runtime_settings import runtime_settings
 from app.core.security import ensure_default_admin
@@ -64,6 +65,8 @@ async def lifespan(app: FastAPI):
 
     if runtime_settings.get("opcua_server.enabled"):
         await embedded_opcua_server.start()
+    if runtime_settings.get("modbus_server.enabled"):
+        await embedded_modbus_server.start()
 
     logger.info("Ackiologs historian started: %d connection(s), %d tag(s)", len(supervisor.config.connections), len(supervisor.config.tags))
 
@@ -71,6 +74,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await embedded_opcua_server.stop()
+        await embedded_modbus_server.stop()
         retention_stop.set()
         retention_task.cancel()
         await asyncio.gather(retention_task, return_exceptions=True)

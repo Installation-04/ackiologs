@@ -15,7 +15,12 @@ dependencies = [
     "python-dotenv>=1.0",
     "PyYAML>=6.0",
     "asyncua>=1.1.5",
-    "pymodbus>=3.6",
+    # Pinned below 3.10: pymodbus 3.10+ deprecated ModbusSlaveContext's
+    # getValues/setValues datastore API (the embedded Modbus server below writes
+    # live values straight into the datastore) in favor of a new SimDevice/SimData
+    # model that, as of this pin, has no equivalent for updating values at runtime
+    # outside its own simulator app. Revisit this pin once that path stabilizes.
+    "pymodbus>=3.6,<3.10",
     "paho-mqtt>=2.1",
     "bcrypt>=4.1",
     "python-jose[cryptography]>=3.3",

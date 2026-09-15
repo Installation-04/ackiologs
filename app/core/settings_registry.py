@@ -140,6 +140,30 @@ SETTINGS: list[SettingDef] = [
         description="If on, OPC UA clients must authenticate with a valid Ackiologs username/password. If off, anonymous read access is allowed.",
     ),
     SettingDef(
+        key="modbus_server.enabled",
+        category="Embedded Modbus Server",
+        label="Enable embedded Modbus TCP server",
+        type="bool",
+        default=False,
+        description="Host this instance as a Modbus TCP server so PLCs/SCADA/HMIs that only "
+        "speak Modbus can read Ackiologs' live tag values, instead of (or in addition to) "
+        "Ackiologs polling Modbus devices itself. Read-only by design: tags are exposed as "
+        "input registers/discrete inputs, which the Modbus protocol has no write function "
+        "code for.",
+    ),
+    SettingDef(
+        key="modbus_server.port",
+        category="Embedded Modbus Server",
+        label="Port",
+        type="int",
+        default=5020,
+        min=1,
+        max=65535,
+        description="TCP port for the embedded Modbus server. Defaults to 5020, not the "
+        "standard 502, since binding 502 requires elevated/root privileges on Linux; set it "
+        "to 502 explicitly if this instance runs with that privilege.",
+    ),
+    SettingDef(
         key="display.time_format",
         category="Display",
         label="Time format",
