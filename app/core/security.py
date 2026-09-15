@@ -46,27 +46,35 @@ class CurrentUser:
         self.role = role
 
 
-async def get_current_user(token: Annotated[str | None, Depends(oauth2_scheme)]) -> CurrentUser:
+def verify_token(token: str | None) -> CurrentUser | None:
+    """Shared JWT check used by both the HTTP dependency and the WebSocket route below
+    — WebSocket connections can't carry an Authorization header from a browser client,
+    so /ws/live takes the token as a query parameter and verifies it the same way."""
     settings = get_settings()
     if not settings.auth_enabled:
         return CurrentUser(username="anonymous", role=Role.ADMIN)
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    if token is None:
-        raise credentials_exception
+    if not token:
+        return None
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
         username = payload.get("sub")
         role = payload.get("role")
-        if username is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    return CurrentUser(username=username, role=Role(role))
+        if username is None or role is None:
+            return None
+        return CurrentUser(username=username, role=Role(role))
+    except (JWTError, ValueError):
+        return None
+
+
+async def get_current_user(token: Annotated[str | None, Depends(oauth2_scheme)]) -> CurrentUser:
+    user = verify_token(token)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
 
 
 def require_role(*roles: Role):

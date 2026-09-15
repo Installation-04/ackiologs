@@ -102,7 +102,8 @@
 
   function connectWs() {
     const proto = location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${location.host}/ws/live`);
+    const query = state.token ? `?token=${encodeURIComponent(state.token)}` : "";
+    const ws = new WebSocket(`${proto}://${location.host}/ws/live${query}`);
     state.ws = ws;
     ws.onopen = () => $("#conn-dot").classList.add("on");
     ws.onclose = () => {

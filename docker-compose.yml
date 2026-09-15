@@ -9,7 +9,11 @@ services:
       - "${ACKIOLOGS_HOST_BIND:-0.0.0.0}:${ACKIOLOGS_PORT:-8000}:8000"
     environment:
       ACKIOLOGS_DATABASE_URL: "sqlite+aiosqlite:///./data/ackiologs.db"
-      ACKIOLOGS_SECRET_KEY: "${ACKIOLOGS_SECRET_KEY:-change-me-in-production}"
+      # Left unset here on purpose: with no ACKIOLOGS_SECRET_KEY, the app generates a
+      # random key on first run and persists it in the ackiologs_data volume — safer
+      # than a shared hardcoded default. Set it in .env yourself for a multi-instance
+      # deployment where every instance needs to share one signing key.
+      ACKIOLOGS_SECRET_KEY: "${ACKIOLOGS_SECRET_KEY:-}"
       ACKIOLOGS_AUTH_ENABLED: "${ACKIOLOGS_AUTH_ENABLED:-true}"
       ACKIOLOGS_RETENTION_DAYS: "${ACKIOLOGS_RETENTION_DAYS:-0}"
     volumes:
