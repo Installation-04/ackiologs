@@ -1,7 +1,19 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.paths import default_config_dir, default_data_dir
+
+
+def _default_database_url() -> str:
+    # Zero-config default: a local SQLite file next to the app (repo root when running
+    # from source; next to the executable for the packaged Linux/Windows builds).
+    # Point at Postgres/TimescaleDB for production, e.g.
+    # postgresql+asyncpg://historian:historian@localhost:5432/ackiologs
+    db_path = default_data_dir() / "ackiologs.db"
+    return f"sqlite+aiosqlite:///{db_path.as_posix()}"
 
 
 class Settings(BaseSettings):
@@ -11,13 +23,11 @@ class Settings(BaseSettings):
 
     app_name: str = "Ackiologs Historian"
 
-    # Zero-config default: a local SQLite file. Point at Postgres/TimescaleDB for production, e.g.
-    # postgresql+asyncpg://historian:historian@localhost:5432/ackiologs
-    database_url: str = "sqlite+aiosqlite:///./data/ackiologs.db"
+    database_url: str = Field(default_factory=_default_database_url)
 
     # Where tag and connection definitions live.
-    tags_config_path: Path = Path("config/tags.yaml")
-    connections_config_path: Path = Path("config/connections.yaml")
+    tags_config_path: Path = Field(default_factory=lambda: default_config_dir() / "tags.yaml")
+    connections_config_path: Path = Field(default_factory=lambda: default_config_dir() / "connections.yaml")
 
     # Ingestion pipeline tuning.
     ingest_queue_maxsize: int = 50_000
