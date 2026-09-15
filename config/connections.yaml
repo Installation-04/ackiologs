@@ -45,3 +45,48 @@ connections:
   #   username: telemetry
   #   password: ${MQTT_PASSWORD}
   #   qos: 1
+
+  # --- EtherNet/IP example (Allen-Bradley / Rockwell CompactLogix, ControlLogix,
+  #     Micro800) ---------------------------------------------------------------
+  # - name: line1_ab
+  #   protocol: ethernetip
+  #   host: 192.168.1.70
+  #   slot: 0                  # CPU slot in the rack (ControlLogix chassis); omit for Micro800
+  #   poll_interval_ms: 1000
+
+  # --- Siemens S7 example (S7-300/400/1200/1500 via S7comm) -------------------
+  # - name: line1_siemens
+  #   protocol: s7
+  #   host: 192.168.1.80
+  #   rack: 0
+  #   slot: 1                  # 2 for S7-300/400, 1 for S7-1200/1500
+  #   poll_interval_ms: 1000
+
+  # --- BACnet/IP example (building automation: AHUs, chillers, VAV boxes) -----
+  # - name: bldg_bacnet
+  #   protocol: bacnet
+  #   local_address: "192.168.1.5/24:47808"   # this host's own IP/subnet, not the device's
+  #   device_instance: 599999                  # this local (virtual) BACnet device's instance ID
+  #   poll_interval_ms: 5000
+
+  # --- SNMP example (network gear, UPS, PDU, environmental sensors) -----------
+  # - name: rack1_ups
+  #   protocol: snmp
+  #   host: 192.168.1.90
+  #   community: public
+  #   version: "2c"
+  #   poll_interval_ms: 10000
+
+  # --- Generic HTTP/REST example (cloud SCADA, vendor APIs, anything with a
+  #     JSON endpoint) ----------------------------------------------------------
+  # - name: cloud_api
+  #   protocol: http
+  #   base_url: "https://api.example-scada.com"
+  #   bearer_token: ${CLOUD_API_TOKEN}
+  #   poll_interval_ms: 15000
+
+  # --- Generic SQL example (poll an external historian/MES/ERP database) ------
+  # - name: mes_db
+  #   protocol: sql
+  #   database_url: "postgresql+asyncpg://readonly_user:${MES_DB_PASSWORD}@mes-db.local:5432/mes"
+  #   poll_interval_ms: 30000

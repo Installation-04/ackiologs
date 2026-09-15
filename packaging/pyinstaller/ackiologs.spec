@@ -20,6 +20,11 @@ datas += collect_data_files("asyncua")
 hiddenimports = (
     collect_submodules("asyncua")
     + collect_submodules("pymodbus")
+    + collect_submodules("pycomm3")
+    + collect_submodules("snap7")  # pure Python since 3.x — no native lib to bundle
+    + collect_submodules("bacpypes3")
+    + collect_submodules("pysnmp")
+    + collect_submodules("pyasn1")
     + [
         "paho.mqtt.client",
         "paho.mqtt.publish",
@@ -30,6 +35,7 @@ hiddenimports = (
         "uvicorn.lifespan.on",
         "aiosqlite",
         "asyncpg",
+        "httpx",
     ]
 )
 
