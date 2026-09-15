@@ -70,10 +70,12 @@ async def _bucketed(session: AsyncSession, tag: Tag, start: datetime, end: datet
         "interval_seconds": interval_seconds,
         "points": [
             {
-                "ts": datetime.fromtimestamp(b, tz=timezone.utc).isoformat(),
-                "avg": avg,
-                "min": mn,
-                "max": mx,
+                # Postgres returns EXTRACT(epoch ...) as decimal.Decimal, not a float
+                # like SQLite does — fromtimestamp() rejects Decimal, so cast explicitly.
+                "ts": datetime.fromtimestamp(float(b), tz=timezone.utc).isoformat(),
+                "avg": float(avg) if avg is not None else None,
+                "min": float(mn) if mn is not None else None,
+                "max": float(mx) if mx is not None else None,
                 "count": cnt,
             }
             for b, avg, mn, mx, cnt in rows

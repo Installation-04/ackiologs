@@ -55,7 +55,11 @@ class ModbusConnector(BaseConnector):
         addr = tag["address"]  # "holding:40001" / "coil:5" / "input:30002:float32"
         parts = addr.split(":")
         table, register = parts[0], int(parts[1])
-        encoding = parts[2] if len(parts) > 2 else tag.get("data_type", "int16")
+        # Register encoding, not the historian's own data_type (float/int/bool/string) —
+        # those are a different vocabulary and would silently misdecode multi-register
+        # values (e.g. "float" doesn't match "float32" below, so it'd read one register
+        # instead of two). Defaults to int16, matching the documented address format.
+        encoding = parts[2] if len(parts) > 2 else "int16"
         unit = self.config.get("unit_id", 1)
 
         try:

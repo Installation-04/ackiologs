@@ -49,6 +49,13 @@ class IngestPipeline:
         self._stop = asyncio.Event()
 
     async def load_metadata(self) -> None:
+        """(Re-)load tag and alarm definitions from the DB. Safe to call again after
+        `POST /api/config/reload` has synced edited config into the DB — an already-
+        ACTIVE alarm's state is preserved across the reload so it isn't reported as a
+        fresh activation on the next sample."""
+        previously_active = {
+            state.definition.id for states in self._alarms_by_tag.values() for state in states if state.active
+        }
         async with session_scope() as session:
             tags = (await session.execute(select(Tag))).scalars().all()
             self._tag_meta = {
@@ -62,7 +69,8 @@ class IngestPipeline:
                 tag_name = by_id.get(a.tag_id)
                 if not tag_name:
                     continue
-                self._alarms_by_tag.setdefault(tag_name, []).append(AlarmRuntimeState(a))
+                state = AlarmRuntimeState(a, active=a.id in previously_active)
+                self._alarms_by_tag.setdefault(tag_name, []).append(state)
 
     async def run(self) -> None:
         await self.load_metadata()
