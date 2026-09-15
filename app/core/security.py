@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 
 from app.config import get_settings
+from app.core.runtime_settings import runtime_settings
 from app.db.base import session_scope
 from app.db.models import Role, User
 
@@ -27,7 +28,8 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(subject: str, role: str) -> str:
     settings = get_settings()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    expire_minutes = runtime_settings.get("security.access_token_expire_minutes")
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
     payload = {"sub": subject, "role": role, "exp": expire}
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 

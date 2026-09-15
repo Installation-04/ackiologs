@@ -21,8 +21,10 @@
     loadTags();
     loadAlarms();
     loadConnections();
+    loadOpcuaServerStatus();
     setInterval(loadAlarms, 15000);
     setInterval(loadConnections, 15000);
+    setInterval(loadOpcuaServerStatus, 15000);
   }
 
   function logout() {
@@ -59,6 +61,8 @@
       btn.classList.add("active");
       $(`#view-${btn.dataset.view}`).classList.add("active");
       if (btn.dataset.view === "trend") loadTrend();
+      if (btn.dataset.view === "settings") loadSettings();
+      if (btn.dataset.view === "connections") loadOpcuaServerStatus();
     });
   });
 
@@ -289,11 +293,29 @@
       tbody.innerHTML = "";
       for (const e of events) {
         const tr = document.createElement("tr");
+        const needsAck = e.state !== "acked" ? `<button class="small-link" data-ack="${e.alarm_id}">Ack</button>` : (e.acked_by ? `by ${e.acked_by}` : "");
         tr.innerHTML = `<td>${new Date(e.ts).toLocaleString()}</td><td class="state-${e.state}">${e.state}</td>
-          <td>${e.tag_id}</td><td>${fmt(e.value)}</td><td>${e.message || ""}</td>`;
+          <td>${e.tag_name || e.tag_id}</td><td>${fmt(e.value)}</td><td>${e.message || ""}</td><td>${needsAck}</td>`;
         tbody.appendChild(tr);
       }
+      tbody.querySelectorAll("button[data-ack]").forEach((b) =>
+        b.addEventListener("click", async () => {
+          try {
+            await api(`/api/alarms/events/${b.dataset.ack}/ack`, { method: "POST" });
+            loadAlarms();
+          } catch (e) { /* ignore */ }
+        })
+      );
     } catch (e) { /* ignore transient errors */ }
+  }
+
+  function fmtConnConfig(cfg) {
+    if (!cfg) return "-";
+    const parts = [];
+    for (const key of ["host", "url", "endpoint_url", "broker", "port"]) {
+      if (cfg[key] !== undefined) parts.push(`${key}=${cfg[key]}`);
+    }
+    return parts.length ? parts.join(", ") : "-";
   }
 
   async function loadConnections() {
@@ -305,11 +327,102 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `<td>${c.name}</td><td>${c.protocol}</td>
           <td class="quality-${c.connected ? "good" : "bad"}">${c.connected ? "connected" : "disconnected"}</td>
-          <td>${c.tag_count}</td>`;
+          <td>${c.tag_count}</td><td>${fmtConnConfig(c.config)}</td>`;
         tbody.appendChild(tr);
       }
     } catch (e) { /* ignore transient errors */ }
   }
+
+  async function loadOpcuaServerStatus() {
+    const el = $("#opcua-server-status");
+    try {
+      const s = await api("/api/settings/opcua-server/status");
+      el.innerHTML = s.running
+        ? `<span class="quality-good">● running</span> at <code>${s.endpoint}</code> — ${s.tag_count} tag(s) exposed, ${s.require_auth ? "login required" : "anonymous access allowed"}`
+        : `<span class="quality-bad">● stopped</span> — enable it on the Settings page to let other SCADA/historian systems connect to Ackiologs as an OPC UA data source.`;
+    } catch (e) {
+      el.textContent = "Could not load status.";
+    }
+  }
+
+  // --- Settings page ---
+  let settingsSchema = [];
+  const pendingSettingChanges = {};
+
+  function settingInputHtml(s) {
+    const id = `setting-${s.key}`;
+    if (s.type === "bool") {
+      return `<input type="checkbox" id="${id}" data-key="${s.key}" ${s.value ? "checked" : ""} />`;
+    }
+    if (s.type === "enum") {
+      const opts = s.choices.map((c) => `<option value="${c}" ${c === s.value ? "selected" : ""}>${c}</option>`).join("");
+      return `<select id="${id}" data-key="${s.key}">${opts}</select>`;
+    }
+    if (s.type === "int" || s.type === "float") {
+      const step = s.type === "float" ? "any" : "1";
+      const minAttr = s.min !== null && s.min !== undefined ? `min="${s.min}"` : "";
+      const maxAttr = s.max !== null && s.max !== undefined ? `max="${s.max}"` : "";
+      return `<input type="number" step="${step}" ${minAttr} ${maxAttr} id="${id}" data-key="${s.key}" value="${s.value}" />`;
+    }
+    return `<input type="text" id="${id}" data-key="${s.key}" value="${s.value}" />`;
+  }
+
+  async function loadSettings() {
+    const container = $("#settings-form");
+    try {
+      settingsSchema = await api("/api/settings");
+      const byCategory = {};
+      for (const s of settingsSchema) {
+        (byCategory[s.category] = byCategory[s.category] || []).push(s);
+      }
+      let html = "";
+      for (const [category, items] of Object.entries(byCategory)) {
+        html += `<fieldset class="settings-group"><legend>${category}</legend>`;
+        for (const s of items) {
+          html += `<div class="settings-row">
+            <label for="setting-${s.key}">${s.label}</label>
+            ${settingInputHtml(s)}
+            <p class="settings-desc">${s.description || ""}</p>
+          </div>`;
+        }
+        html += `</fieldset>`;
+      }
+      container.innerHTML = html;
+      container.querySelectorAll("[data-key]").forEach((input) => {
+        input.addEventListener("change", () => {
+          const key = input.dataset.key;
+          const schema = settingsSchema.find((s) => s.key === key);
+          let value;
+          if (schema.type === "bool") value = input.checked;
+          else if (schema.type === "int") value = parseInt(input.value, 10);
+          else if (schema.type === "float") value = parseFloat(input.value);
+          else value = input.value;
+          pendingSettingChanges[key] = value;
+        });
+      });
+    } catch (e) {
+      container.textContent = "Could not load settings.";
+    }
+  }
+
+  $("#settings-save-btn").addEventListener("click", async () => {
+    const msg = $("#settings-save-msg");
+    if (Object.keys(pendingSettingChanges).length === 0) {
+      msg.textContent = "No changes to save.";
+      msg.hidden = false;
+      return;
+    }
+    try {
+      const res = await api("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ values: pendingSettingChanges }) });
+      msg.textContent = `Saved (${res.changed.length} changed).`;
+      msg.hidden = false;
+      for (const k of Object.keys(pendingSettingChanges)) delete pendingSettingChanges[k];
+      loadSettings();
+    } catch (e) {
+      msg.textContent = "Save failed: " + e.message;
+      msg.hidden = false;
+    }
+  });
 
   if (state.token) showApp();
 })();

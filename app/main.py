@@ -6,18 +6,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.api.routes_alarms import router as alarms_router
 from app.api.routes_auth import router as auth_router
 from app.api.routes_connections import router as connections_router
 from app.api.routes_history import router as history_router
 from app.api.routes_live_ws import router as live_ws_router
+from app.api.routes_settings import router as settings_router
 from app.api.routes_tags import router as tags_router
 from app._version import __version__
 from app.config import get_settings
 from app.connectors.base import Sample
+from app.core.opcua_server import embedded_opcua_server
+from app.core.runtime_settings import runtime_settings
 from app.core.security import ensure_default_admin
 from app.core.supervisor import ConnectorSupervisor
 from app.db.bootstrap import init_db
 from app.ingest.pipeline import IngestPipeline
+from app.ingest.retention import run_retention_pruner
 from app.paths import bundled_static_dir, default_data_dir, sqlite_file_path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -33,6 +38,14 @@ async def lifespan(app: FastAPI):
 
     await init_db()
     await ensure_default_admin()
+    await runtime_settings.load(
+        seed={
+            "general.site_name": settings.app_name,
+            "retention.days": settings.retention_days,
+            "retention.default_deadband_percent": settings.default_deadband_percent,
+            "security.access_token_expire_minutes": settings.access_token_expire_minutes,
+        }
+    )
 
     queue: asyncio.Queue[Sample] = asyncio.Queue(maxsize=settings.ingest_queue_maxsize)
     supervisor = ConnectorSupervisor(queue)
@@ -46,11 +59,21 @@ async def lifespan(app: FastAPI):
     await pipeline.load_metadata()  # ensure metadata is loaded before connectors start emitting
     await supervisor.start_all()
 
+    retention_stop = asyncio.Event()
+    retention_task = asyncio.create_task(run_retention_pruner(retention_stop))
+
+    if runtime_settings.get("opcua_server.enabled"):
+        await embedded_opcua_server.start()
+
     logger.info("Ackiologs historian started: %d connection(s), %d tag(s)", len(supervisor.config.connections), len(supervisor.config.tags))
 
     try:
         yield
     finally:
+        await embedded_opcua_server.stop()
+        retention_stop.set()
+        retention_task.cancel()
+        await asyncio.gather(retention_task, return_exceptions=True)
         await supervisor.stop_all()
         await pipeline.stop()
         pipeline_task.cancel()
@@ -73,6 +96,8 @@ app.include_router(tags_router)
 app.include_router(history_router)
 app.include_router(connections_router)
 app.include_router(live_ws_router)
+app.include_router(alarms_router)
+app.include_router(settings_router)
 
 
 @app.get("/health")

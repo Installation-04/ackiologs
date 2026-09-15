@@ -32,7 +32,8 @@
         <button class="nav-btn active" data-view="live">Live</button>
         <button class="nav-btn" data-view="trend">Trend</button>
         <button class="nav-btn" data-view="alarms">Alarms</button>
-        <button class="nav-btn" data-view="connections">Connections</button>
+        <button class="nav-btn" data-view="connections">Endpoints</button>
+        <button class="nav-btn" data-view="settings">Settings</button>
       </nav>
       <div class="header-right">
         <span id="conn-dot" class="dot" title="live feed"></span>
@@ -78,16 +79,28 @@
 
       <section id="view-alarms" class="view">
         <table id="alarms-table">
-          <thead><tr><th>Time</th><th>State</th><th>Tag</th><th>Value</th><th>Message</th></tr></thead>
+          <thead><tr><th>Time</th><th>State</th><th>Tag</th><th>Value</th><th>Message</th><th>Ack</th></tr></thead>
           <tbody></tbody>
         </table>
       </section>
 
       <section id="view-connections" class="view">
+        <h2 class="section-title">Outbound connections (polling PLCs / servers)</h2>
         <table id="connections-table">
-          <thead><tr><th>Connection</th><th>Protocol</th><th>Status</th><th>Tags</th></tr></thead>
+          <thead><tr><th>Connection</th><th>Protocol</th><th>Status</th><th>Tags</th><th>Address</th></tr></thead>
           <tbody></tbody>
         </table>
+
+        <h2 class="section-title">Embedded OPC UA server (host your own data acquisition server)</h2>
+        <div id="opcua-server-status" class="opcua-status-card">Loading...</div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div id="settings-form" class="settings-form">Loading...</div>
+        <div class="settings-actions">
+          <button id="settings-save-btn">Save changes</button>
+          <span id="settings-save-msg" class="settings-save-msg" hidden></span>
+        </div>
       </section>
     </main>
   </div>
