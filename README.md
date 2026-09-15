@@ -52,6 +52,26 @@ variables — no admin rights needed to edit tags or connections after install.
 
 `GET /api/version` reports the running build's version on any of the four.
 
+### Guided Linux install (systemd or Docker)
+
+`scripts/install.sh` asks how you want to run it and sets it up for you —
+install method (systemd service or Docker Compose), database backend (SQLite
+or TimescaleDB, managed or external), network bind address/port, and history
+retention:
+
+```bash
+sudo ./scripts/install.sh
+# or, standalone:
+curl -fsSL https://raw.githubusercontent.com/Installation-04/ackiologs/main/scripts/install.sh | sudo bash
+```
+
+The systemd path installs the Linux binary to `/opt/ackiologs`, config to
+`/etc/ackiologs`, data to `/var/lib/ackiologs`, and a hardened
+`ackiologs.service` unit (runs as its own unprivileged `ackiologs` user).
+For scripted/non-interactive use, export the answers as env vars
+(`INSTALL_METHOD`, `DB_BACKEND`, `BIND_HOST`, `PORT`, `RETENTION_DAYS`, ...)
+and pass `--yes`.
+
 ### Cutting a release
 
 Tag `main` and push it — the [release workflow](.github/workflows/release.yml)
