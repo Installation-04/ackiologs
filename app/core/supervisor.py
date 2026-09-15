@@ -110,19 +110,15 @@ class ConnectorSupervisor:
                 existing_alarms = (
                     await session.execute(select(AlarmDefinition).where(AlarmDefinition.tag_id == tag.id))
                 ).scalars().all()
-                existing_conditions = {a.condition for a in existing_alarms}
+                existing_by_condition = {a.condition: a for a in existing_alarms}
                 for alarm_spec in spec.alarms:
                     condition = AlarmCondition(alarm_spec["condition"])
-                    if condition in existing_conditions:
-                        continue
-                    session.add(
-                        AlarmDefinition(
-                            tag_id=tag.id,
-                            name=alarm_spec.get("name", f"{spec.name} {condition.value}"),
-                            condition=condition,
-                            setpoint=alarm_spec.get("setpoint"),
-                            priority=alarm_spec.get("priority", 5),
-                            message=alarm_spec.get("message"),
-                        )
-                    )
+                    alarm = existing_by_condition.get(condition)
+                    if alarm is None:
+                        alarm = AlarmDefinition(tag_id=tag.id, condition=condition)
+                        session.add(alarm)
+                    alarm.name = alarm_spec.get("name", f"{spec.name} {condition.value}")
+                    alarm.setpoint = alarm_spec.get("setpoint")
+                    alarm.priority = alarm_spec.get("priority", 5)
+                    alarm.message = alarm_spec.get("message")
             await session.commit()
