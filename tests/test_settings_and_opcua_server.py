@@ -115,6 +115,101 @@ async def test_alarm_acknowledgment(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_alarm_history_filters_and_pagination(client: AsyncClient):
+    headers = await _make_admin_and_login(client, "history-page-tester")
+
+    from app.db.base import session_scope
+    from app.db.models import AlarmCondition, AlarmDefinition, AlarmEvent, AlarmState, Tag
+
+    now = datetime.now(timezone.utc)
+    async with session_scope() as session:
+        tag_a = Tag(name="HistTagA", connection_name="sim", address="1")
+        tag_b = Tag(name="HistTagB", connection_name="sim", address="2")
+        session.add_all([tag_a, tag_b])
+        await session.flush()
+
+        alarm_a = AlarmDefinition(
+            tag_id=tag_a.id, name="High Temp", condition=AlarmCondition.HIGH, setpoint=100.0, priority=1
+        )
+        alarm_b = AlarmDefinition(
+            tag_id=tag_b.id, name="Low Level", condition=AlarmCondition.LOW, setpoint=5.0, priority=3
+        )
+        session.add_all([alarm_a, alarm_b])
+        await session.flush()
+
+        # 1 historical event for tag A (old, outside the query window) and 3 recent
+        # ones for each tag, so filters have something real to narrow down.
+        session.add(
+            AlarmEvent(
+                alarm_id=alarm_a.id, tag_id=tag_a.id, ts=now - timedelta(days=10),
+                state=AlarmState.ACTIVE, value=101.0,
+            )
+        )
+        for i in range(3):
+            session.add(
+                AlarmEvent(
+                    alarm_id=alarm_a.id, tag_id=tag_a.id, ts=now - timedelta(minutes=i),
+                    state=AlarmState.ACTIVE, value=105.0 + i,
+                )
+            )
+        session.add(
+            AlarmEvent(alarm_id=alarm_b.id, tag_id=tag_b.id, ts=now, state=AlarmState.CLEARED, value=4.0)
+        )
+        await session.commit()
+
+    # no filters: everything for this test's tags comes back, newest first
+    res = await client.get("/api/alarms/history?limit=1000", headers=headers)
+    assert res.status_code == 200
+    body = res.json()
+    names = {e["tag_name"] for e in body["events"]}
+    assert {"HistTagA", "HistTagB"}.issubset(names)
+    assert body["has_more"] is False
+
+    # tag_name filter
+    res = await client.get("/api/alarms/history?tag_name=HistTagA&limit=1000", headers=headers)
+    events = res.json()["events"]
+    assert events and all(e["tag_name"] == "HistTagA" for e in events)
+    assert all(e["alarm_name"] == "High Temp" for e in events)
+    assert all(e["condition"] == "high" for e in events)
+    assert all(e["priority"] == 1 for e in events)
+
+    # state filter
+    res = await client.get("/api/alarms/history?state=cleared&limit=1000", headers=headers)
+    events = res.json()["events"]
+    assert events and all(e["state"] == "cleared" for e in events)
+
+    # an invalid state is a 400, not a silently-empty result or a 500
+    res = await client.get("/api/alarms/history?state=not_a_real_state", headers=headers)
+    assert res.status_code == 400
+
+    # priority filter (from the alarm definition, not the event)
+    res = await client.get("/api/alarms/history?priority=3&limit=1000", headers=headers)
+    events = res.json()["events"]
+    assert events and all(e["priority"] == 3 for e in events)
+
+    # start/end window excludes the 10-day-old event for tag A
+    res = await client.get(
+        "/api/alarms/history",
+        params={"tag_name": "HistTagA", "start": (now - timedelta(hours=1)).isoformat()},
+        headers=headers,
+    )
+    events = res.json()["events"]
+    assert len(events) == 3
+    assert all(e["value"] >= 105.0 for e in events)
+
+    # pagination: limit=2 over tag A's 4 events reports has_more, and offset advances
+    res = await client.get("/api/alarms/history?tag_name=HistTagA&limit=2&offset=0", headers=headers)
+    page1 = res.json()
+    assert len(page1["events"]) == 2
+    assert page1["has_more"] is True
+    res = await client.get("/api/alarms/history?tag_name=HistTagA&limit=2&offset=2", headers=headers)
+    page2 = res.json()
+    assert len(page2["events"]) == 2
+    assert page2["has_more"] is False
+    assert {e["id"] for e in page1["events"]}.isdisjoint({e["id"] for e in page2["events"]})
+
+
+@pytest.mark.asyncio
 async def test_retention_pruner_deletes_old_samples_only(client: AsyncClient):
     from app.db.base import session_scope
     from app.db.models import Tag, TagValue

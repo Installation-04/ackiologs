@@ -1,5 +1,7 @@
 {
-  "app": { "brandSub": "Historian" },
+  "app": {
+    "brandSub": "Historian"
+  },
   "login": {
     "subtitle": "Historiador de Datos Industriales",
     "username": "usuario",
@@ -12,9 +14,12 @@
     "trend": "Tendencia",
     "alarms": "Alarmas",
     "connections": "Conexiones",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "history": "Historial"
   },
-  "header": { "signOut": "Cerrar sesión" },
+  "header": {
+    "signOut": "Cerrar sesión"
+  },
   "live": {
     "tag": "Etiqueta",
     "value": "Valor",
@@ -50,6 +55,21 @@
     "active": "activa",
     "cleared": "despejada",
     "acked": "confirmada"
+  },
+  "history": {
+    "from": "Desde",
+    "to": "Hasta",
+    "tag": "Etiqueta",
+    "allTags": "Todas las etiquetas",
+    "allStates": "Todos los estados",
+    "search": "Buscar",
+    "reset": "Restablecer",
+    "alarmName": "Alarma",
+    "condition": "Condición",
+    "priority": "Prioridad",
+    "ackedBy": "Confirmado por",
+    "prev": "Anterior",
+    "next": "Siguiente"
   },
   "connections": {
     "outboundTitle": "Conexiones salientes (sondeo de PLC / servidores)",
@@ -110,19 +130,58 @@
       "Display": "Pantalla"
     },
     "keys": {
-      "general.site_name": { "label": "Nombre del sitio", "description": "Se muestra en el encabezado del panel y en el nombre del servidor OPC UA integrado." },
-      "general.timezone": { "label": "Zona horaria de pantalla", "description": "Nombre de zona horaria IANA (p. ej. America/Mexico_City) usado para mostrar las marcas de tiempo en el panel. El almacenamiento siempre es UTC." },
-      "retention.days": { "label": "Retención de historial (días)", "description": "0 = conservar para siempre. Elimina tag_values más antiguos que esto en un ciclo en segundo plano (funciona en SQLite y Postgres normal también, no solo con la política nativa de TimescaleDB)." },
-      "retention.default_deadband_percent": { "label": "Banda muerta predeterminada (% del rango de ingeniería)", "description": "Se aplica a las etiquetas que no definen su propio deadband_percent. 0 desactiva la compresión por banda muerta de forma predeterminada." },
-      "alarms.require_acknowledgment": { "label": "Requerir confirmación del operador", "description": "Estilo ISA-18.2: cuando está activado, el panel marca las alarmas activas/despejadas como pendientes de una confirmación explícita hasta que un operador las confirme." },
-      "security.access_token_expire_minutes": { "label": "Duración del token de sesión (minutos)", "description": "Cuánto tiempo permanece válido un inicio de sesión. Se aplica a los tokens emitidos después de este cambio; las sesiones existentes conservan su vencimiento original." },
-      "opcua_server.enabled": { "label": "Habilitar servidor OPC UA integrado", "description": "Aloje el propio servidor OPC UA de esta instancia para que otros sistemas SCADA/historiador puedan conectarse a Ackiologs como fuente de datos, en lugar de (o además de) que Ackiologs se conecte a los PLC." },
-      "opcua_server.port": { "label": "Puerto", "description": "Puerto TCP para el punto de conexión del servidor OPC UA integrado (opc.tcp://host:puerto/ackiologs/server/)." },
-      "opcua_server.require_auth": { "label": "Requerir inicio de sesión", "description": "Si está activado, los clientes OPC UA deben autenticarse con un usuario/contraseña válido de Ackiologs. Si está desactivado, se permite el acceso de lectura anónimo." },
-      "modbus_server.enabled": { "label": "Habilitar servidor Modbus TCP integrado", "description": "Aloje esta instancia como un servidor Modbus TCP para que los PLC/SCADA/HMI que solo hablan Modbus puedan leer los valores en vivo de las etiquetas de Ackiologs, en lugar de (o además de) que Ackiologs sondee dispositivos Modbus. Solo lectura por diseño: las etiquetas se exponen como registros de entrada/entradas discretas, para las cuales el protocolo Modbus no tiene código de función de escritura." },
-      "modbus_server.port": { "label": "Puerto", "description": "Puerto TCP para el servidor Modbus integrado. El valor predeterminado es 5020, no el estándar 502, ya que enlazar el puerto 502 requiere privilegios elevados/root en Linux; establézcalo en 502 explícitamente si esta instancia se ejecuta con ese privilegio." },
-      "display.time_format": { "label": "Formato de hora", "description": "Cómo el panel muestra las horas del reloj." },
-      "display.language": { "label": "Idioma predeterminado", "description": "El idioma del panel para los usuarios que no han elegido el suyo propio en el selector de idioma." }
+      "general.site_name": {
+        "label": "Nombre del sitio",
+        "description": "Se muestra en el encabezado del panel y en el nombre del servidor OPC UA integrado."
+      },
+      "general.timezone": {
+        "label": "Zona horaria de pantalla",
+        "description": "Nombre de zona horaria IANA (p. ej. America/Mexico_City) usado para mostrar las marcas de tiempo en el panel. El almacenamiento siempre es UTC."
+      },
+      "retention.days": {
+        "label": "Retención de historial (días)",
+        "description": "0 = conservar para siempre. Elimina tag_values más antiguos que esto en un ciclo en segundo plano (funciona en SQLite y Postgres normal también, no solo con la política nativa de TimescaleDB)."
+      },
+      "retention.default_deadband_percent": {
+        "label": "Banda muerta predeterminada (% del rango de ingeniería)",
+        "description": "Se aplica a las etiquetas que no definen su propio deadband_percent. 0 desactiva la compresión por banda muerta de forma predeterminada."
+      },
+      "alarms.require_acknowledgment": {
+        "label": "Requerir confirmación del operador",
+        "description": "Estilo ISA-18.2: cuando está activado, el panel marca las alarmas activas/despejadas como pendientes de una confirmación explícita hasta que un operador las confirme."
+      },
+      "security.access_token_expire_minutes": {
+        "label": "Duración del token de sesión (minutos)",
+        "description": "Cuánto tiempo permanece válido un inicio de sesión. Se aplica a los tokens emitidos después de este cambio; las sesiones existentes conservan su vencimiento original."
+      },
+      "opcua_server.enabled": {
+        "label": "Habilitar servidor OPC UA integrado",
+        "description": "Aloje el propio servidor OPC UA de esta instancia para que otros sistemas SCADA/historiador puedan conectarse a Ackiologs como fuente de datos, en lugar de (o además de) que Ackiologs se conecte a los PLC."
+      },
+      "opcua_server.port": {
+        "label": "Puerto",
+        "description": "Puerto TCP para el punto de conexión del servidor OPC UA integrado (opc.tcp://host:puerto/ackiologs/server/)."
+      },
+      "opcua_server.require_auth": {
+        "label": "Requerir inicio de sesión",
+        "description": "Si está activado, los clientes OPC UA deben autenticarse con un usuario/contraseña válido de Ackiologs. Si está desactivado, se permite el acceso de lectura anónimo."
+      },
+      "modbus_server.enabled": {
+        "label": "Habilitar servidor Modbus TCP integrado",
+        "description": "Aloje esta instancia como un servidor Modbus TCP para que los PLC/SCADA/HMI que solo hablan Modbus puedan leer los valores en vivo de las etiquetas de Ackiologs, en lugar de (o además de) que Ackiologs sondee dispositivos Modbus. Solo lectura por diseño: las etiquetas se exponen como registros de entrada/entradas discretas, para las cuales el protocolo Modbus no tiene código de función de escritura."
+      },
+      "modbus_server.port": {
+        "label": "Puerto",
+        "description": "Puerto TCP para el servidor Modbus integrado. El valor predeterminado es 5020, no el estándar 502, ya que enlazar el puerto 502 requiere privilegios elevados/root en Linux; establézcalo en 502 explícitamente si esta instancia se ejecuta con ese privilegio."
+      },
+      "display.time_format": {
+        "label": "Formato de hora",
+        "description": "Cómo el panel muestra las horas del reloj."
+      },
+      "display.language": {
+        "label": "Idioma predeterminado",
+        "description": "El idioma del panel para los usuarios que no han elegido el suyo propio en el selector de idioma."
+      }
     }
   },
   "languages": {
