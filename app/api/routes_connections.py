@@ -2,14 +2,11 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_pipeline, get_supervisor
 from app.core.security import CurrentUser, get_current_user, require_role
 from app.core.supervisor import ConnectorSupervisor
-from app.db.base import get_session
-from app.db.models import AlarmEvent, Role
+from app.db.models import Role
 from app.ingest.pipeline import IngestPipeline
 
 router = APIRouter(prefix="/api", tags=["connections"])
@@ -43,27 +40,6 @@ async def write_tag(
     return {"status": "ok"}
 
 
-@router.get("/alarms/events")
-async def alarm_events(
-    session: Annotated[AsyncSession, Depends(get_session)],
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
-    limit: int = 200,
-):
-    rows = (await session.execute(select(AlarmEvent).order_by(AlarmEvent.ts.desc()).limit(limit))).scalars().all()
-    return [
-        {
-            "id": e.id,
-            "alarm_id": e.alarm_id,
-            "tag_id": e.tag_id,
-            "ts": e.ts.isoformat(),
-            "state": e.state.value,
-            "value": e.value,
-            "message": e.message,
-        }
-        for e in rows
-    ]
-
-
 @router.post("/config/reload")
 async def reload_config(
     supervisor: Annotated[ConnectorSupervisor, Depends(get_supervisor)],
@@ -76,4 +52,10 @@ async def reload_config(
     in-memory metadata is refreshed here too, not just the database."""
     await supervisor.load_and_sync()
     await pipeline.load_metadata()
+
+    from app.core.opcua_server import embedded_opcua_server
+
+    if embedded_opcua_server.running:
+        await embedded_opcua_server.restart()
+
     return {"status": "reloaded", "tags": len(supervisor.config.tags), "connections": len(supervisor.config.connections)}

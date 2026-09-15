@@ -80,11 +80,28 @@ class ConnectorSupervisor:
                 return
         raise ValueError(f"tag '{tag_name}' not found on any active connection")
 
+    _SENSITIVE_CONFIG_KEYS = ("password", "secret", "token", "key", "credential")
+
     def health(self) -> list[dict[str, Any]]:
-        return [
-            {"name": c.name, "protocol": c.protocol, "connected": c.connected, "tag_count": len(c.tags)}
-            for c in self._connectors.values()
-        ]
+        specs_by_name = {s.name: s for s in self.config.connections} if self.config else {}
+        result = []
+        for c in self._connectors.values():
+            spec = specs_by_name.get(c.name)
+            safe_config = {
+                k: v
+                for k, v in (spec.config if spec else {}).items()
+                if not any(s in k.lower() for s in self._SENSITIVE_CONFIG_KEYS)
+            }
+            result.append(
+                {
+                    "name": c.name,
+                    "protocol": c.protocol,
+                    "connected": c.connected,
+                    "tag_count": len(c.tags),
+                    "config": safe_config,
+                }
+            )
+        return result
 
     async def _sync_tags_to_db(self, config: HistorianConfig) -> None:
         async with session_scope() as session:
